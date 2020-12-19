@@ -308,8 +308,10 @@ AC_OUTPUT([
 	Makefile
 	capi/Makefile
 	capi/geos_c.h
-	doc/Doxyfile
+	doc/doxygen/Doxyfile
 	doc/Makefile
+	doc/doxygen/Makefile
+	doc/example/Makefile
 	macros/Makefile
 	src/Makefile
 	src/algorithm/Makefile

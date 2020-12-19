@@ -1,8 +1,8 @@
 #!/bin/sh
 
-cd doc
+cd doc/doxygen
 make doxygen-html
 cd doxygen_docs
-cd ../..
+cd ../../..
 mkdir -p debian/tmp/usr/share/man/man1
 cp debian/geos-config.1 debian/tmp/usr/share/man/man1

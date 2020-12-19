@@ -10,6 +10,13 @@
 # See the COPYING file for more information.
 ################################################################################
 
-add_subdirectory(doxygen)
-add_subdirectory(example)
-add_subdirectory(web)
+add_executable(example example.cpp)
+
+target_link_libraries(example PRIVATE geos)
+if(BUILD_TESTING)
+    target_include_directories(test_geos_unit
+        PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
+endif()
+
+

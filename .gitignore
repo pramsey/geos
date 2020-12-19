@@ -68,9 +68,9 @@ config.status
 config.sub
 configure
 depcomp
-doc/Doxyfile
-doc/example
-doc/doxygen_docs
+doc/doxygen/Doxyfile
+doc/example/example
+doc/doxygen/doxygen_docs
 include/config.h
 include/config.h.in
 authors.git
