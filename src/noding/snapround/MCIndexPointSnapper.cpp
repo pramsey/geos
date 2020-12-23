@@ -75,15 +75,16 @@ public:
     select(chain::MonotoneChain& mc, std::size_t startIndex) override
     {
         // This is casting away 'constness'!
-        NodedSegmentString& ss = *(static_cast<NodedSegmentString*>(mc.getContext()));
+        const NodedSegmentString* css = static_cast<const NodedSegmentString*>(mc.getContext());
+        NodedSegmentString* ss = const_cast<NodedSegmentString*>(css);
 
-        if (parentEdge != nullptr && parentEdge == &ss) {
+        if (parentEdge != nullptr && parentEdge == ss) {
             // exit if hotpixel is equal to endpoint of target segment
             if (startIndex == hotPixelVertexIndex || (startIndex + 1) == hotPixelVertexIndex)
                 return;
         }
         // snap and record if a node was created
-        isNodeAddedVar |= addSnappedNode(hotPixel, &ss, startIndex);
+        isNodeAddedVar |= addSnappedNode(hotPixel, ss, startIndex);
     }
 
     bool

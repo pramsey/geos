@@ -32,7 +32,7 @@ namespace index { // geos.index
 namespace chain { // geos.index.chain
 
 MonotoneChain::MonotoneChain(const geom::CoordinateSequence& newPts,
-                             std::size_t nstart, std::size_t nend, void* nContext)
+                             std::size_t nstart, std::size_t nend, const void* nContext)
     : pts(newPts)
     , context(nContext)
     , start(nstart)

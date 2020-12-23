@@ -43,7 +43,7 @@ namespace chain { // geos.index.chain
 
 /* static public */
 void
-MonotoneChainBuilder::getChains(const CoordinateSequence* pts, void* context,
+MonotoneChainBuilder::getChains(const CoordinateSequence* pts, const void* context,
                                 std::vector<MonotoneChain>& mcList)
 {
     std::size_t chainStart = 0;

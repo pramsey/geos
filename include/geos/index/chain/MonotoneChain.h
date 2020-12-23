@@ -95,7 +95,7 @@ public:
     ///   Ownership left to caller, this class holds a reference.
     ///
     MonotoneChain(const geom::CoordinateSequence& pts,
-                  std::size_t start, std::size_t end, void* context);
+                  std::size_t start, std::size_t end, const void* context);
 
     ~MonotoneChain() = default;
 
@@ -141,7 +141,7 @@ public:
     void computeOverlaps(MonotoneChain* mc, double overlapTolerance,
                          MonotoneChainOverlapAction* mco);
 
-    void*
+    const void*
     getContext()
     {
         return context;
@@ -171,7 +171,7 @@ private:
     const geom::CoordinateSequence& pts;
 
     /// user-defined information
-    void* context;
+    const void* context;
 
     /// Index of chain start vertex into the CoordinateSequence, 0 based.
     std::size_t start;

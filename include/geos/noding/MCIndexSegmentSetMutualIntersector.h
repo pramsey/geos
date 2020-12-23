@@ -125,11 +125,11 @@ private:
     bool indexBuilt;
     MonoChains indexChains;
 
-    void addToIndex(SegmentString* segStr);
+    void addToIndex(const SegmentString* segStr);
 
     void intersectChains();
 
-    void addToMonoChains(SegmentString* segStr);
+    void addToMonoChains(const SegmentString* segStr);
 
 };
 

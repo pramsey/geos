@@ -61,7 +61,7 @@ public:
      * @param[out] mcList a list of the monotone chains for the points
      */
     static void getChains(const geom::CoordinateSequence* pts,
-                          void* context,
+                          const void* context,
                           std::vector<MonotoneChain>& mcList);
 
     /**
