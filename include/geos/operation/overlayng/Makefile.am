@@ -9,7 +9,9 @@ geosdir = $(includedir)/geos/operation/overlayng
 
 geos_HEADERS = \
     Edge.h \
+    Edge.inl \
     EdgeKey.h \
+    EdgeKey.inl \
     EdgeMerger.h \
     EdgeNodingBuilder.h \
     EdgeSourceInfo.h \
@@ -21,9 +23,11 @@ geos_HEADERS = \
     LineLimiter.h \
     MaximalEdgeRing.h \
     OverlayEdge.h \
+    OverlayEdge.inl \
     OverlayEdgeRing.h \
     OverlayGraph.h \
     OverlayLabel.h \
+    OverlayLabel.inl \
     OverlayLabeller.h \
     OverlayMixedPoints.h \
     OverlayPoints.h \

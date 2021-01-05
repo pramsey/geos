@@ -23,6 +23,7 @@
 #ifndef GEOS_NODING_NODEDSEGMENTSTRING_H
 #define GEOS_NODING_NODEDSEGMENTSTRING_H
 
+#include <geos/inline.h>
 #include <geos/export.h>
 #include <geos/noding/NodableSegmentString.h> // for inheritance
 #include <geos/geom/CoordinateSequence.h> // for inlines
@@ -85,7 +86,7 @@ public:
     static SegmentString::NonConstVect* getNodedSubstrings(
         const SegmentString::NonConstVect& segStrings);
 
-    std::unique_ptr<std::vector<geom::Coordinate>> getNodedCoordinates();
+    std::vector<geom::Coordinate> getNodedCoordinates();
 
 
     /** \brief
@@ -110,39 +111,6 @@ public:
     {}
 
     ~NodedSegmentString() override = default;
-
-    /** \brief
-     * Adds an intersection node for a given point and segment to this segment string.
-     *
-     * If an intersection already exists for this exact location, the existing
-     * node will be returned.
-     *
-     * @param intPt the location of the intersection
-     * @param segmentIndex the index of the segment containing the intersection
-     * @return the intersection node for the point
-     */
-    SegmentNode*
-    addIntersectionNode(geom::Coordinate* intPt, std::size_t segmentIndex)
-    {
-        std::size_t normalizedSegmentIndex = segmentIndex;
-
-        // normalize the intersection point location
-        std::size_t nextSegIndex = normalizedSegmentIndex + 1;
-        if(nextSegIndex < size()) {
-            geom::Coordinate const& nextPt =
-                getCoordinate(nextSegIndex);
-
-            // Normalize segment index if intPt falls on vertex
-            // The check for point equality is 2D only - Z values are ignored
-            if(intPt->equals2D(nextPt)) {
-                normalizedSegmentIndex = nextSegIndex;
-            }
-        }
-
-        // Add the intersection point to edge intersection list.
-        SegmentNode* ei = getNodeList().add(*intPt, normalizedSegmentIndex);
-        return ei;
-    }
 
     SegmentNodeList& getNodeList();
 
@@ -218,6 +186,10 @@ private:
 
 #ifdef _MSC_VER
 #pragma warning(pop)
+#endif
+
+#ifdef GEOS_INLINE
+#include "geos/noding/NodedSegmentString.inl"
 #endif
 
 #endif // GEOS_NODING_NODEDSEGMENTSTRING_H

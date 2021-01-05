@@ -33,16 +33,12 @@ namespace chain { // geos.index.chain
 
 MonotoneChain::MonotoneChain(const geom::CoordinateSequence& newPts,
                              std::size_t nstart, std::size_t nend, void* nContext)
-    :
-    pts(newPts),
-    context(nContext),
-    start(nstart),
-    end(nend),
-    env(newPts[nstart], newPts[nend]),
-    envIsSet(false),
-    id(-1)
-{
-}
+    : pts(newPts)
+    , context(nContext)
+    , start(nstart)
+    , end(nend)
+    , env()
+{}
 
 const Envelope&
 MonotoneChain::getEnvelope()
@@ -53,12 +49,11 @@ MonotoneChain::getEnvelope()
 const Envelope&
 MonotoneChain::getEnvelope(double expansionDistance)
 {
-    if (!envIsSet) {
+    if (env.isNull()) {
         env.init(pts[start], pts[end]);
         if (expansionDistance > 0.0) {
             env.expandBy(expansionDistance);
         }
-        envIsSet = true;
     }
     return env;
 }
@@ -192,25 +187,26 @@ MonotoneChain::overlaps(const Coordinate& p1, const Coordinate& p2,
                         const Coordinate& q1, const Coordinate& q2,
                         double overlapTolerance) const
 {
-    double minq = std::min(q1.x, q2.x);
     double maxq = std::max(q1.x, q2.x);
     double minp = std::min(p1.x, p2.x);
-    double maxp = std::max(p1.x, p2.x);
-
     if (minp > (maxq + overlapTolerance))
         return false;
+
+    double minq = std::min(q1.x, q2.x);
+    double maxp = std::max(p1.x, p2.x);
     if (maxp < (minq - overlapTolerance))
+        return false;
+
+    maxq = std::max(q1.y, q2.y);
+    minp = std::min(p1.y, p2.y);
+    if (minp > (maxq + overlapTolerance))
         return false;
 
     minq = std::min(q1.y, q2.y);
-    maxq = std::max(q1.y, q2.y);
-    minp = std::min(p1.y, p2.y);
     maxp = std::max(p1.y, p2.y);
-
-    if (minp > (maxq + overlapTolerance))
-        return false;
     if (maxp < (minq - overlapTolerance))
         return false;
+
     return true;
 }
 

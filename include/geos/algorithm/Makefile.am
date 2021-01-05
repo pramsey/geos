@@ -15,6 +15,7 @@ geos_HEADERS = \
 	Area.h \
 	BoundaryNodeRule.h \
 	CGAlgorithmsDD.h \
+	CGAlgorithmsDD.inl \
 	CentralEndpointIntersector.h \
 	Centroid.h \
 	ConvexHull.h \
@@ -27,6 +28,7 @@ geos_HEADERS = \
 	Intersection.h \
 	Length.h \
 	LineIntersector.h \
+	LineIntersector.inl \
 	MinimumBoundingCircle.h \
 	MinimumDiameter.h \
 	NotRepresentableException.h \

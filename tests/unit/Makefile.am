@@ -44,7 +44,7 @@ geos_unit_SOURCES = \
 	algorithm/AngleTest.cpp \
 	algorithm/AreaTest.cpp \
 	algorithm/CGAlgorithms/computeOrientationTest.cpp \
-	algorithm/CGAlgorithms/isCCWTest.cpp \
+	algorithm/CGAlgorithms/OrientationIsCCWTest.cpp \
 	algorithm/CGAlgorithms/isPointInRingTest.cpp \
 	algorithm/CGAlgorithms/signedAreaTest.cpp \
 	algorithm/ConvexHullTest.cpp \
@@ -78,6 +78,8 @@ geos_unit_SOURCES = \
 	capi/GEOSEqualsTest.cpp \
 	capi/GEOSFrechetDistanceTest.cpp \
 	capi/GEOSGeom_createCollectionTest.cpp \
+	capi/GEOSGeom_createPolygonTest.cpp \
+	capi/GEOSGeom_createLineStringTest.cpp \
 	capi/GEOSGeom_createTest.cpp \
 	capi/GEOSGeom_extentTest.cpp \
 	capi/GEOSGeom_extractUniquePointsTest.cpp \
