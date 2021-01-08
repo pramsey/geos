@@ -320,7 +320,7 @@ void GeosOp::run() {
 
     if (args.isShowTime || args.isVerbose) {
         std::cout
-            << "Processed " <<  opCount << " operations ( "
+            << "Processed " <<  opCount << " " << args.opName << " ops ( "
             << vertexCount << " vertices)"
             << "  -- " << timeFormatted( totalTime )
             << std::endl;
@@ -429,6 +429,9 @@ void GeosOp::output(Result* result) {
             outputGeometry( result->valGeom.get() );
         }
     }
+    else if (result->isGeometryList() ) {
+        outputGeometryList( result->valGeomList );
+    }
     else {
         // output as text/WKT
         std::cout << result->toString() << std::endl;
@@ -455,11 +458,16 @@ void GeosOp::outputGeometry(const Geometry * geom) {
         // output as text/WKT
         WKTWriter writer;
         // turn off stoopid fixed precision
-        //writer.setTrim(true);
+        writer.setTrim(true);
         if (args.precision >= 0) {
-            writer.setTrim(true);
-            writer.setRoundingPrecision(args.precision);
+             writer.setRoundingPrecision(args.precision);
         }
         std::cout << writer.write(geom) << std::endl;
+    }
+}
+
+void GeosOp::outputGeometryList(std::vector<std::unique_ptr<const Geometry>> & list) {
+    for (size_t i = 0; i < list.size(); i++) {
+        outputGeometry( list[i].get() );
     }
 }

@@ -23,11 +23,16 @@
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/prep/PreparedGeometry.h>
 #include <geos/geom/prep/PreparedGeometryFactory.h>
+#include <geos/algorithm/construct/MaximumInscribedCircle.h>
+#include <geos/algorithm/MinimumBoundingCircle.h>
+#include <geos/operation/distance/DistanceOp.h>
 #include <geos/operation/relate/RelateOp.h>
 #include <geos/operation/valid/MakeValid.h>
 #include <geos/operation/overlayng/OverlayNG.h>
 #include <geos/operation/polygonize/Polygonizer.h>
 #include <geos/precision/GeometryPrecisionReducer.h>
+#include <geos/triangulate/DelaunayTriangulationBuilder.h>
+#include <geos/triangulate/VoronoiDiagramBuilder.h>
 
 #include "GeomFunction.h"
 
@@ -77,29 +82,96 @@ GeomFunction::init()
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->covers( geomB.get() ) );
         });
+
+    add("distance", "computes distance between geometry A and B", 2, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            return new Result( geom->distance( geomB.get() ) );
+        });
+
      add("envelope",
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->getCentroid() );
         });
+
     add("interiorPoint",
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->getInteriorPoint() );
         });
+
     add("intersects", "tests if geometry A and B intersect", 2, 0,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->intersects( geomB.get() ) );
         });
+
+    add("isSimple", "tests if geometry A is simple", 1, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            return new Result( geom->isSimple() );
+        });
+
     add("isValid", "tests if geometry A is valid", 1, 0,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->isValid() );
         });
+
     add("length",
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geom->getLength() );
         });
+
     add("makeValid",
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             return new Result( geos::operation::valid::MakeValid().build( geom.get() ) );
+        });
+
+    add("maxInscribedCircle", "computes maximum inscribed circle radius of Polygon A up to a distance tolerance", 2, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            geos::algorithm::construct::MaximumInscribedCircle mc( geom.get(), d );
+            std::unique_ptr<Geometry> res = mc.getRadiusLine();
+            return new Result( std::move(res) );
+        });
+    add("minBoundingCircle",
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            geos::algorithm::MinimumBoundingCircle mc( geom.get() );
+            std::unique_ptr<Geometry> res = mc.getCircle();
+            return new Result( std::move(res) );
+        });
+
+    add("nearestPoints", "computes nearest points of geometry A and B", 2, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            std::unique_ptr<CoordinateSequence> cs = geos::operation::distance::DistanceOp::nearestPoints(geom.get(), geomB.get());
+            auto factory = geom->getFactory();
+            auto res = factory->createLineString( std::move(cs) );
+            return new Result( std::move(res) );
+        });
+
+    add("delaunay", "computes the Delaunay Triangulation of geometry A vertices", 1, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            geos::triangulate::DelaunayTriangulationBuilder builder;
+            builder.setTolerance(0);
+            builder.setSites( *geom );
+
+            Geometry* out = builder.getTriangles(*(geom->getFactory())).release();
+
+            std::vector<std::unique_ptr<const Geometry>> geoms;
+            for(unsigned int i = 0; i < out->getNumGeometries(); i++) {
+                geoms.push_back( std::unique_ptr< const Geometry>( out->getGeometryN(i) ) );
+            }
+            return new Result( std::move(geoms) ) ;
+        });
+
+    add("voronoi", "computes the Voronoi Diagram of geometry A vertices", 1, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            geos::triangulate::VoronoiDiagramBuilder builder;
+            builder.setTolerance(0);
+            builder.setSites( *geom );
+
+            Geometry* out = builder.getDiagram(*(geom->getFactory())).release();
+
+            std::vector<std::unique_ptr<const Geometry>> geoms;
+            for(unsigned int i = 0; i < out->getNumGeometries(); i++) {
+                geoms.push_back( std::unique_ptr< const Geometry>( out->getGeometryN(i) ) );
+            }
+            return new Result( std::move(geoms) ) ;
         });
 
     add("polygonize",
@@ -108,14 +180,18 @@ GeomFunction::init()
             p.add(geom.get());
 
             auto polys = p.getPolygons();
-            std::vector<geom::Geometry*>* geoms = new std::vector<geom::Geometry*>;
+            std::vector<std::unique_ptr<const Geometry>> geoms;
             for(unsigned int i = 0; i < polys.size(); i++) {
-                geoms->push_back(polys[i].release());
+                geoms.push_back( std::move(polys[i]) );
             }
-            auto factory = geom->getFactory();
-            Geometry * res = factory->createGeometryCollection(geoms);
-            return new Result( res) ;
+            return new Result( std::move(geoms) ) ;
         });
+
+    add("reverse", "reverses geometry A", 1, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            return new Result( geom->reverse() );
+        });
+
 
     add("containsPrep", "tests if geometry A contains geometry B, using PreparedGeometry", 2, 0,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
@@ -147,7 +223,7 @@ GeomFunction::init()
             }
             return new Result( prepGeomCache->covers( geomB.get() ) );
         });
-    add("intersectsPrep", "tests if geometry A intersects geometry B using PreparedGeometry", 2, 0,
+    add("intersectsPrep", "tests if geometry A intersects B using PreparedGeometry", 2, 0,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             if (cacheKey == nullptr || cacheKey != geom.get()) {
                 auto pg = std::unique_ptr<const PreparedGeometry>(
@@ -156,6 +232,30 @@ GeomFunction::init()
                 cacheKey = geom.get();
             }
             return new Result( prepGeomCache->intersects( geomB.get() ) );
+        });
+
+    add("distancePrep", "computes distance between geometry A and B using PreparedGeometry", 2, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            if (cacheKey == nullptr || cacheKey != geom.get()) {
+                auto pg = std::unique_ptr<const PreparedGeometry>(
+                    PreparedGeometryFactory::prepare( geom.get()) );
+                prepGeomCache = std::move( pg );
+                cacheKey = geom.get();
+            }
+            return new Result( prepGeomCache->distance( geomB.get() ) );
+        });
+    add("nearestPointsPrep", "computes nearest points of geometry A and B using PreparedGeometry", 2, 0,
+        [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
+            if (cacheKey == nullptr || cacheKey != geom.get()) {
+                auto pg = std::unique_ptr<const PreparedGeometry>(
+                    PreparedGeometryFactory::prepare( geom.get()) );
+                prepGeomCache = std::move( pg );
+                cacheKey = geom.get();
+            }
+            auto cs = prepGeomCache->nearestPoints( geomB.get() );
+            auto factory = geom->getFactory();
+            auto res = factory->createLineString( std::move(cs) );
+            return new Result( std::move(res) );
         });
 
 
@@ -192,22 +292,22 @@ GeomFunction::init()
             return new Result( geom->Union( geomB.get() ) );
         });
 
-    add("differenceSR", "computes difference of geometry A from B rounding to a precision scale factor", 2, 0,
+    add("differenceSR", "computes difference of geometry A from B, snap-rounding to a precision scale factor", 2, 1,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             geom::PrecisionModel pm(d);
             return new Result( OverlayNG::overlay(geom.get(), geomB.get(), OverlayNG::DIFFERENCE, &pm) );
         });
-    add("intersectionSR", "computes intersection of geometry A and B", 2, 0,
+    add("intersectionSR", "computes intersection of geometry A and B, snap-rounding to a precision scale factor", 2, 1,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             geom::PrecisionModel pm(d);
             return new Result( OverlayNG::overlay(geom.get(), geomB.get(), OverlayNG::INTERSECTION, &pm) );
         });
-    add("symDifferenceSR", "computes symmetric difference of geometry A and B", 2, 0,
+    add("symDifferenceSR", "computes symmetric difference of geometry A and B, snap-rounding to a precision scale factor", 2, 1,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             geom::PrecisionModel pm(d);
             return new Result( OverlayNG::overlay(geom.get(), geomB.get(), OverlayNG::SYMDIFFERENCE, &pm) );
         });
-    add("unionSR", "computes union of geometry A and B", 2, 0,
+    add("unionSR", "computes union of geometry A and B, snap-rounding to a precision scale factor", 2, 1,
         [](const std::unique_ptr<Geometry>& geom, const std::unique_ptr<Geometry>& geomB, double d)->Result* {
             geom::PrecisionModel pm(d);
             return new Result( OverlayNG::overlay(geom.get(), geomB.get(), OverlayNG::UNION, &pm) );
@@ -326,6 +426,12 @@ Result::Result(Geometry * val)
     typeCode = typeGeometry;
 }
 
+Result::Result( std::vector<std::unique_ptr<const Geometry>> val )
+{
+    valGeomList = std::move(val);
+    typeCode = typeGeomList;
+}
+
 Result::~Result()
 {
 }
@@ -333,6 +439,11 @@ Result::~Result()
 bool
 Result::isGeometry() {
     return typeCode == typeGeometry;
+}
+
+bool
+Result::isGeometryList() {
+    return typeCode == typeGeomList;
 }
 
 std::string
@@ -358,6 +469,9 @@ Result::toString() {
         if (valGeom == nullptr)
             return "null";
         return valGeom->toString();
+
+    case typeGeomList:
+       return metadata();
     }
     return "Value for Unknonwn type";
 }
@@ -374,6 +488,9 @@ Result::metadata() {
         if (valGeom == nullptr)
             return "null";
         return valGeom->getGeometryType() + "( " + std::to_string( valGeom->getNumPoints() ) + " )";
+
+    case typeGeomList:
+        return "Geometry[" + std::to_string( valGeomList.size()) + "]";
     }
     return "Unknonwn type";
 }
