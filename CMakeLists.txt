@@ -305,7 +305,7 @@ add_subdirectory(util)
 #-----------------------------------------------------------------------------
 # Documentation/Examples
 #-----------------------------------------------------------------------------
-add_subdirectory(doc)
+add_subdirectory(doxygen)
 
 #-----------------------------------------------------------------------------
 # Install and export targets - support 'make install' or equivalent
