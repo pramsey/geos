@@ -5,16 +5,28 @@ nav_order: 2
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
+# About
 
-You can find the source code for Minima at GitHub:
-[jekyll][jekyll-organization] /
-[minima](https://github.com/jekyll/minima)
+GEOS is a C/C++ library for spatial computational geometry of the sort generally used by "geographic information systems" software. GEOS is a core dependency of [PostGIS](http://postgis.net), [QGIS](http://qgis.org), and [Shapely](https://shapely.readthedocs.io/en/stable/project.html).
 
-You can find the source code for Jekyll at GitHub:
-[jekyll][jekyll-organization] /
-[jekyll](https://github.com/jekyll/jekyll)
+## Capabilities
 
+Spatial Model and Functions
 
-[jekyll-organization]: https://github.com/jekyll
+* **Geometries**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection
+* **Predicates**: Intersects, Touches, Disjoint, Crosses, Within, Contains, Overlaps, Equals, Covers
+* **Operations**: Union, Distance, Intersection, Symmetric Difference, Convex Hull, Envelope, Buffer, Simplify, Polygon Assembly, Valid, Area, Length,
+* Prepared geometries (pre-spatially indexed)
+* STR spatial index
+* OGC Well Known Text (WKT) and Well Known Binary (WKB) encoders and decoders.
+
+## API Features
+
+* C++ API (will likely change across versions)
+* C API (provides long-term ABI stability)
+* Thread safety (using the reentrant API)
+
+## License
+
+GEOS is [open source software](https://opensource.com/resources/what-open-source) available under the terms of ​[GNU Lesser General Public License](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) (LGPL).
 
