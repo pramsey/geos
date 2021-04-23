@@ -71,6 +71,36 @@ struct test_geometryfixer_data {
         ensure_equals_geometry(expected.get(), actual.get());
     }
 
+
+    void checkFixZ(const std::string& wkt, const std::string& wktExpected) {
+        std::unique_ptr<Geometry> geom = wktreader_.read(wkt);
+        checkFixZ(geom.get(), false, wktExpected);
+    }
+
+    void checkFixZKeepCollapse(const std::string& wkt, const std::string& wktExpected) {
+        std::unique_ptr<Geometry> geom = wktreader_.read(wkt);
+        checkFixZ(geom.get(), true, wktExpected);
+    }
+
+    void checkFixZ(const Geometry* input, bool keepCollapse, const std::string& wktExpected) {
+        std::unique_ptr<Geometry> actual;
+        if (keepCollapse) {
+            GeometryFixer fixer(input);
+            fixer.setKeepCollapsed(true);
+            actual = fixer.getResult();
+        }
+        else {
+            actual = GeometryFixer::fix(input);
+        }
+
+        std::unique_ptr<Geometry> expected = wktreader_.read(wktExpected);
+
+        ensure("Result is invalid", actual->isValid());
+        ensure_equals_geometry(expected.get(), actual.get());
+
+        // checkEqualXYZ(expected, actual);
+    }
+
     std::unique_ptr<Point> createPoint(double x, double y) {
         geos::geom::Coordinate p(x, y);
         GeometryFactory::Ptr fact = GeometryFactory::create();
