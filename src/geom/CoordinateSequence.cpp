@@ -207,30 +207,6 @@ CoordinateSequence::equals(const CoordinateSequence* cl1,
     return true;
 }
 
-bool
-CoordinateSequence::equals3D(const CoordinateSequence* cl1,
-                           const CoordinateSequence* cl2)
-{
-    // FIXME: use std::equals()
-
-    if(cl1 == cl2) {
-        return true;
-    }
-    if(cl1 == nullptr || cl2 == nullptr) {
-        return false;
-    }
-    std::size_t npts1 = cl1->getSize();
-    if(npts1 != cl2->getSize()) {
-        return false;
-    }
-    for(std::size_t i = 0; i < npts1; i++) {
-        if(!(cl1->getAt(i).equals3D(cl2->getAt(i)))) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void
 CoordinateSequence::expandEnvelope(Envelope& env) const
 {

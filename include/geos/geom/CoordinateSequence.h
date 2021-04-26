@@ -175,14 +175,6 @@ public:
     static bool equals(const CoordinateSequence* cl1,
                        const CoordinateSequence* cl2);
 
-    /**
-     * \brief
-     * Returns true if the two arrays are identical in X, Y and Z, both null,
-     * or pointwise equal
-     */
-    static bool equals3D(const CoordinateSequence* cl1,
-                         const CoordinateSequence* cl2)
-
     /// Scroll given CoordinateSequence so to start with given Coordinate.
     static void scroll(CoordinateSequence* cl, const Coordinate* firstCoordinate);
 
