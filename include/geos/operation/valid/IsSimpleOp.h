@@ -47,7 +47,49 @@ namespace geos {      // geos
 namespace operation { // geos.operation
 namespace valid {     // geos.operation.valid
 
-
+/**
+ * Tests whether a Geometry is simple as defined by the OGC SFS specification.
+ *
+ * Simplicity is defined for each {@link Geometry} type as follows:
+ *
+ *   * Point geometries are simple.
+ *   * MultiPoint geometries are simple if every point is unique
+ *   * LineString geometries are simple if they do not self-intersect at interior points
+ *     (i.e. points other than the endpoints).
+ *   * MultiLineString geometries are simple if
+ *     their elements are simple and they intersect only at points
+ *     which are boundary points of both elements.
+ *     (The notion of boundary points can be user-specified - see below).
+ *   * Polygonal geometries have no definition of simplicity.
+ *     The isSimple code checks if all polygon rings are simple.
+ *     (Note: this means that isSimple cannot be used to test
+ *     for ALL self-intersections in Polygons.
+ *     In order to check if a Polygonal geometry has self-intersections,
+ *     use Geometry::isValid()).
+ *   * GeometryCollection geometries are simple if all their elements are simple.
+ *   * Empty geometries are simple
+ *
+ * For linear geometries the evaluation of simplicity
+ * can be customized by supplying a BoundaryNodeRule
+ * to define how boundary points are determined.
+ * The default is the SFS-standard.
+ *
+ * Note that under the Mod-2 rule, closed LineStrings (rings)
+ * have no boundary.
+ * This means that an intersection at their endpoints makes the geometry non-simple.
+ * If it is required to test whether a set of LineStrings touch
+ * only at their endpoints, use BoundaryNodeRule::getBoundaryEndPoint().
+ * For example, this can be used to validate that a collection of lines
+ * form a topologically valid linear network.
+ *
+ * By default this class finds a single non-simple location.
+ * To find all non-simple locations, set setFindAllLocations(bool)
+ * before calling isSimple(), and retrieve the locations
+ * via getNonSimpleLocations().
+ * This can be used to find all intersection points in a linear network.
+ *
+ * @see BoundaryNodeRule
+ */
 class GEOS_DLL IsSimpleOp {
 
 private:
@@ -101,10 +143,10 @@ private:
         std::vector<geom::Coordinate>& intersectionPts;
         algorithm::LineIntersector li;
 
-        bool hasInteriorInt;
-        bool hasInteriorVertexInt;
-        bool hasEqualSegments;
-        bool hasInteriorEndpointInt;
+        // bool hasInteriorInt;
+        // bool hasInteriorVertexInt;
+        // bool hasEqualSegments;
+        // bool hasInteriorEndpointInt;
 
         bool findIntersection(
             noding::SegmentString* ss0, std::size_t segIndex0,
