@@ -221,7 +221,7 @@ public:
         {};
 
     /**
-    * Creates a simplicity checker using a given {@link BoundaryNodeRule}
+    * Creates a simplicity checker using a given {@link algorithm::BoundaryNodeRule}
     *
     * @param geom the geometry to test
     * @param p_boundaryNodeRule the boundary node rule to use.
