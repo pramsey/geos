@@ -50,13 +50,13 @@ namespace valid {     // geos.operation.valid
 /**
  * Tests whether a Geometry is simple as defined by the OGC SFS specification.
  *
- * Simplicity is defined for each {@link Geometry} type as follows:
+ * Simplicity is defined for each geom::Geometry type as follows:
  *
- *   * Point geometries are simple.
- *   * MultiPoint geometries are simple if every point is unique
- *   * LineString geometries are simple if they do not self-intersect at interior points
+ *   * geom::Point geometries are simple.
+ *   * geom::MultiPoint geometries are simple if every point is unique
+ *   * geom::LineString geometries are simple if they do not self-intersect at interior points
  *     (i.e. points other than the endpoints).
- *   * MultiLineString geometries are simple if
+ *   * geom::MultiLineString geometries are simple if
  *     their elements are simple and they intersect only at points
  *     which are boundary points of both elements.
  *     (The notion of boundary points can be user-specified - see below).
@@ -65,8 +65,8 @@ namespace valid {     // geos.operation.valid
  *     (Note: this means that isSimple cannot be used to test
  *     for ALL self-intersections in Polygons.
  *     In order to check if a Polygonal geometry has self-intersections,
- *     use Geometry::isValid()).
- *   * GeometryCollection geometries are simple if all their elements are simple.
+ *     use geom::Geometry::isValid()).
+ *   * geom::GeometryCollection geometries are simple if all their elements are simple.
  *   * Empty geometries are simple
  *
  * For linear geometries the evaluation of simplicity
@@ -224,7 +224,7 @@ public:
     * Creates a simplicity checker using a given {@link BoundaryNodeRule}
     *
     * @param geom the geometry to test
-    * @param boundaryNodeRule the boundary node rule to use.
+    * @param p_boundaryNodeRule the boundary node rule to use.
     */
     IsSimpleOp(const geom::Geometry& geom, const algorithm::BoundaryNodeRule& p_boundaryNodeRule)
         : inputGeom(geom)
