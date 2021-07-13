@@ -437,5 +437,44 @@ void object::test<29>
     ensure_equals("ParseException: Expected two coordinates found more than two", errorMessage);
 }
 
+// Read a GeoJSON empty Polygon with shell list that holds a shell that is an empty coordinate
+template<>
+template<>
+void object::test<30>
+()
+{
+    std::string geojson { "{\"type\":\"Polygon\",\"coordinates\":[[[]]] }" };
+    std::string errorMessage;
+    bool error = false;
+    try {
+        GeomPtr geom(geojsonreader.read(geojson));
+    } catch (geos::io::ParseException& e) {
+        error = true;
+        errorMessage = e.what();
+    }
+    ensure(error == true);
+    ensure_equals("ParseException: Expected two coordinates found zero", errorMessage);
+
+}
+
+// Read a GeoJSON empty LineString with coordinate list holding empty coordinate
+template<>
+template<>
+void object::test<31>
+()
+{
+    std::string geojson { "{\"type\":\"LineString\",\"coordinates\":[[]] }" };
+    std::string errorMessage;
+    bool error = false;
+    try {
+        GeomPtr geom(geojsonreader.read(geojson));
+    } catch (geos::io::ParseException& e) {
+        error = true;
+        errorMessage = e.what();
+    }
+    ensure(error == true);
+    ensure_equals("ParseException: Expected two coordinates found zero", errorMessage);
+}
+
 }
 

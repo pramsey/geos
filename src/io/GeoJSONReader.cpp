@@ -203,7 +203,10 @@ std::unique_ptr<geom::Geometry> GeoJSONReader::readGeometry(
 geom::Coordinate GeoJSONReader::readCoordinate(
     const std::vector<double>& coords) const
 {
-    if (coords.size() == 1) {
+    if (coords.size() == 0) {
+        throw  ParseException("Expected two coordinates found zero");
+    }
+    else if (coords.size() == 1) {
         throw  ParseException("Expected two coordinates found one");
     }
     else if (coords.size() > 2) {
