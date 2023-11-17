@@ -3,6 +3,8 @@ xxxx-xx-xx
 
 - Fixes/Improvements:
   - Fix build on Illumus (GH-971)
+  - Buffer mitre join error (GH-995, Paul Ramsey)
+  - segfault with Inf coords (GH-836, Dan Baston)
 
 ## Changes in 3.11.3
 2023-11-11

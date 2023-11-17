@@ -560,4 +560,70 @@ void object::test<21>
 }
 */
 
+// https://trac.osgeo.org/geos/ticket/590
+template<>
+template<>
+void object::test<22>
+()
+{
+    geom1_ = GEOSGeomFromWKT("LINEARRING(38.7066196617741550 -28.8266827415760860, -48.9228243285119790 100.6496977731573000, 54.4799195800256510 129.8110447359351000, 108.8101748540030500 45.8263654831350490, 86.7372079193139310 22.3209346883718070, 71.8793256882949690 36.0080540867567290, 55.2741306329362700 34.2630391674088840, 52.0696193064635370 19.4304123529519610, 62.0890652576763390 -3.9267923737325212, 38.7066196617741550 -28.8266827415760860)");
+
+    ensure(nullptr != geom1_);
+
+    geom2_ = GEOSBufferWithStyle(geom1_, 22.532378519833863, 6, GEOSBUF_CAP_FLAT, GEOSBUF_JOIN_MITRE, 5);
+
+    ensure(nullptr != geom2_);
+
+    ensure(GEOSisValid(geom2_));
+}
+
+// Error raised on invalid value of buffer params
+template<>
+template<>
+void object::test<23>
+()
+{
+    GEOSBufferParams* params = GEOSBufferParams_create();
+
+    ensure_equals(GEOSBufferParams_setEndCapStyle(params, 500), 0);
+    ensure_equals(GEOSBufferParams_setJoinStyle(params, 500), 0);
+
+    GEOSBufferParams_destroy(params);
+}
+
+// Segfault with Inf coords
+// https://github.com/libgeos/geos/issues/822
+template<>
+template<>
+void object::test<24>
+()
+{
+    std::string wkb("0106000020E61000000100000001030000000100000005000000000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F000000000000F07F");
+
+    geom1_ = GEOSGeomFromHEX_buf(reinterpret_cast<const unsigned char*>(wkb.c_str()), wkb.size());
+
+    result_ = GEOSBuffer(geom1_, 20, 8);
+
+    ensure(result_ == nullptr);
+
+    result_ = GEOSBuffer(geom1_, -20, 8);
+
+    ensure(result_ == nullptr);
+}
+
+
+template<>
+template<>
+void object::test<25>
+()
+{
+    geom1_ = GEOSGeomFromWKT("POLYGON ((4.6664239253667485 4.9470840685113275, 4.666423925366749 4.947084068511328, 3.569508914897422 -10.739531408188364, -9.082056557097435 19.893317266250286, 5.639581102785941 18.86388007810711, 4.6664239253667485 4.9470840685113275))");
+    geom2_ = GEOSBufferWithStyle(geom1_, -1, 8,
+                                 GEOSBUF_CAP_ROUND,
+                                 GEOSBUF_JOIN_MITRE,
+                                 5);
+    geom3_ = GEOSGeomFromWKT("POLYGON ((3.3225774291798533 0.0647708524944821, 3.3225774291798555 0.0647708524944812, 2.8688758567150883 -6.4234639154696263, -7.5416226086581215 18.7831577331451953, 4.5722605787819921 17.9360725015914078, 3.3225774291798533 0.0647708524944821))");
+    ensure_geometry_equals(geom3_, geom2_, 0.001);
+}
+
 } // namespace tut
