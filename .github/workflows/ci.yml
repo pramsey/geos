@@ -424,9 +424,6 @@ jobs:
         restore-keys: ${{ runner.os }}-${{ matrix.xcode }}-${{ matrix.build_type}}-${{ matrix.cxxstd }}
 
     - name: 'Build'
-      env:
-        BUILD_TYPE: ${{ matrix.build_type }}
-        CXX_STANDARD: ${{ matrix.cxxstd }}
       run: |
         set -e
         mkdir build
@@ -449,7 +446,7 @@ jobs:
     - name: 'Test'
       run: |
         cd build
-        ctest -V --output-on-failure -C ${BUILD_TYPE}
+        ctest -V --output-on-failure -C ${{ matrix.build_type }}
 
 
   code-quality:
