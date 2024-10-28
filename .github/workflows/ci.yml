@@ -433,10 +433,12 @@ jobs:
         cd build
         cmake --version
         cmake \
-          -DCMAKE_CXX_STANDARD=${CXX_STANDARD} \
-          -DUSE_CCACHE=ON \
-          -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ..
-        cmake --build . --config ${BUILD_TYPE} -j 3
+          -D CMAKE_CXX_STANDARD=${{ matrix.cxxstd }} \
+          -D USE_CCACHE=ON \
+          -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          ..
+        cmake --build . --config ${{ matrix.build_type }} -j 4
+        ccache --show-stats
 
     - name: Save build cache
       uses: actions/cache/save@v4
