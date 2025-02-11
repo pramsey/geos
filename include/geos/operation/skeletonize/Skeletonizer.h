@@ -21,6 +21,7 @@
 // Forward declarations
 namespace geos {
 namespace geom {
+class CoordinateSequence;
 class Geometry;
 class LinearRing;
 class LineString;
@@ -35,6 +36,7 @@ namespace skeletonize { // geos::operation::skeletonize
 
 class GEOS_DLL Skeletonizer {
 
+    using CoordinateSequence = geos::geom::CoordinateSequence;
     using Geometry = geos::geom::Geometry;
     using MultiLineString = geos::geom::MultiLineString;
     using Polygon = geos::geom::Polygon;
@@ -73,9 +75,11 @@ private:
     // double inputWidth;
     // double inputHeight;
 
+    double startPointAngle(const CoordinateSequence* cs) const;
 
-    std::size_t findWidestAngle(const LinearRing* ring) const;
+    std::size_t findWidestAngle(const CoordinateSequence* ring) const;
 
+    std::unique_ptr<CoordinateSequence> startSequenceAtWidest(const CoordinateSequence* seq);
 
 };
 

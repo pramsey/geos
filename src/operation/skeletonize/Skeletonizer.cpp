@@ -62,12 +62,22 @@ Skeletonizer::skeletonize(const Polygon& poly)
 }
 
 
+double
+Skeletonizer::startPointAngle(const CoordinateSequence* cs) const
+{
+    CoordinateXY p0, p1, p2;
+    cs->getAt(cs->size()-2, p0); // start/end point are dupes
+    cs->getAt(0, p1);
+    cs->getAt(1, p2);
+    return Angle::angleBetween(p0, p1, p2);
+}
+
+
 std::size_t
-Skeletonizer::findWidestAngle(const LinearRing* ring) const
+Skeletonizer::findWidestAngle(const CoordinateSequence* cs) const
 {
     std::size_t widest = 0;
     double widestAngle = 0.0;
-    const CoordinateSequence* cs = ring->getCoordinatesRO();
     for (std::size_t i = 0; i < cs->size()-1; i++) {
         CoordinateXY p0, p1, p2;
         if (i > 0) {
@@ -87,6 +97,25 @@ Skeletonizer::findWidestAngle(const LinearRing* ring) const
         }
     }
     return widest;
+}
+
+
+std::unique_ptr<CoordinateSequence>
+Skeletonizer::startSequenceAtWidest(const CoordinateSequence* seq)
+{
+    std::size_t widest = findWidestAngle(seq);
+    auto reorientedSeq = std::make_unique<CoordinateSequence>(seq->size());
+    // Start at widest and take everything up to the end
+    for (std::size_t i = widest; i < seq->size(); i++) {
+        reorientedSeq->add(seq->getAt(i));
+    }
+    // Skip first point (dupes the last) and also
+    // take widest point again, so new ring has dupe
+    // start/end points
+    for (std::size_t i = 1; i <= widest; i++) {
+        reorientedSeq->add(seq->getAt(i));
+    }
+    return reorientedSeq;
 }
 
 
