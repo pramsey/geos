@@ -13,6 +13,8 @@
  **********************************************************************/
 
 #include <geos/operation/skeletonize/Skeletonizer.h>
+#include <geos/operation/skeletonize/SegmentGraph.h>
+#include <geos/algorithm/Angle.h>
 #include <geos/geom/Coordinate.h>
 #include <geos/geom/CoordinateSequence.h>
 #include <geos/geom/Geometry.h>
@@ -28,7 +30,9 @@
 #include <geos/triangulate/VoronoiDiagramBuilder.h>
 #include <geos/util/GEOSException.h>
 
+using geos::algorithm::Angle;
 using geos::geom::Coordinate;
+using geos::geom::CoordinateXY;
 using geos::geom::CoordinateSequence;
 using geos::geom::GeometryTypeId;
 using geos::geom::Geometry;
@@ -50,11 +54,39 @@ namespace skeletonize { // geos.operation.skeletonize
 
 
 /* public static */
-std::unique_ptr<MultiLineString>
+std::unique_ptr<LineString>
 Skeletonizer::skeletonize(const Polygon& poly)
 {
     Skeletonizer skel(poly);
     return skel.skeletonize();
+}
+
+
+std::size_t
+Skeletonizer::findWidestAngle(const LinearRing* ring) const
+{
+    std::size_t widest = 0;
+    double widestAngle = 0.0;
+    const CoordinateSequence* cs = ring->getCoordinatesRO();
+    for (std::size_t i = 0; i < cs->size()-1; i++) {
+        CoordinateXY p0, p1, p2;
+        if (i > 0) {
+            cs->getAt(i-1, p0);
+            cs->getAt(i,   p1);
+            cs->getAt(i+1, p2);
+        }
+        else {
+            cs->getAt(cs->size()-2, p0);
+            cs->getAt(0, p1);
+            cs->getAt(1, p2);
+        }
+        double angle = Angle::angleBetween(p0, p1, p2);
+        if (angle > widestAngle) {
+            widestAngle = angle;
+            widest = i;
+        }
+    }
+    return widest;
 }
 
 
@@ -123,7 +155,7 @@ Skeletonizer::densifyUniformly(const LinearRing* ring, double tolerance)
 }
 
 /* public */
-std::unique_ptr<MultiLineString>
+std::unique_ptr<LineString>
 Skeletonizer::skeletonize()
 {
     std::cout << "GeometryTypeId == " << inputPolygon.getGeometryTypeId() << std::endl;
@@ -140,6 +172,9 @@ Skeletonizer::skeletonize()
     builder.setSites(*denseInput);
 
     std::unique_ptr<MultiLineString> allEdges = builder.getDiagramEdges(*inputFactory);
+
+    std::cout << "allEdges" << std::endl;
+    std::cout << *allEdges << std::endl << std::endl;
 
     std::vector<const Geometry*> nonCrossingEdges;
     PreparedPolygon preparedInput(&inputPolygon);
@@ -163,8 +198,13 @@ Skeletonizer::skeletonize()
     allEdges->apply_ro(&ef);
 
     auto edgesFiltered = inputFactory->createMultiLineString(nonCrossingEdges);
+    std::cout << "edgesFiltered" << std::endl;
+    std::cout << *edgesFiltered << std::endl;
 
-    return edgesFiltered;
+    SegmentGraph sg(*edgesFiltered);
+    auto skeletonLine = sg.longestPath();
+
+    return skeletonLine;
 }
 
 

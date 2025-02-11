@@ -56,8 +56,29 @@ public:
 
     // Reads the inputSegments and builds the vertex
     // map/list/adjacency structures
-    void buildAdjacencyList();
+    void build();
 
+    // Removes all the data structures supporting the graph
+    void clear();
+
+    // Based on the input segments, calculate the
+    // longest path through the graph
+    std::unique_ptr<LineString> longestPath();
+
+    // Returns ordered vector of vertex numbers
+    // of the shortest path between start and end vertices
+    std::pair<std::vector<uint32_t>, double> shortestPath(uint32_t startVertex, uint32_t endVertex);
+
+    // Returns the list of vertices with cardinality of one
+    std::vector<uint32_t> endVertices();
+
+    // Calculate all paths from start vertex and return
+    // the one with the highest cost
+    std::vector<uint32_t> longestPath(uint32_t startVertex, std::vector<uint32_t>& ends);
+
+    // Calculate the overall longest path between all
+    // possible pairs of path ends
+    std::vector<uint32_t> longestPath(std::vector<uint32_t>& ends);
 
 private:
 
@@ -65,9 +86,12 @@ private:
 
     // Map (Vertex, (ID, Cardinality))
     // Iterate to find all dangling vertices
-    // Lookup to find given version identifier
+    // Lookup to find version identifier for coordinate
     std::map<CoordinateXY, std::pair<uint32_t, uint32_t>> m_vertexMap;
 
+    // Vector (Coordinate)
+    // Constant time lookup of the input coordinate for
+    // a given unique vertex identifier
     std::vector<CoordinateXY> m_vertexList;
 
     // Vector (ID0, (ID1, Weight)[])
@@ -79,8 +103,8 @@ private:
     // Number of unique vertices in the collection
     uint32_t m_vertexCount = 0;
 
-
-
+    // Lookup or generate the unique vertex number for this
+    // coordinate
     uint32_t mapVertex(const CoordinateXY& v);
 
 };

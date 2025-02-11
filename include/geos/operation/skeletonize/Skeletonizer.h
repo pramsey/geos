@@ -23,6 +23,7 @@ namespace geos {
 namespace geom {
 class Geometry;
 class LinearRing;
+class LineString;
 class MultiLineString;
 class Polygon;
 }
@@ -38,6 +39,7 @@ class GEOS_DLL Skeletonizer {
     using MultiLineString = geos::geom::MultiLineString;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
+    using LineString = geos::geom::LineString;
 
 public:
 
@@ -45,9 +47,9 @@ public:
         : inputPolygon(poly)
         {};
 
-    std::unique_ptr<MultiLineString> skeletonize();
+    std::unique_ptr<LineString> skeletonize();
 
-    static std::unique_ptr<MultiLineString> skeletonize(const Polygon &poly);
+    static std::unique_ptr<LineString> skeletonize(const Polygon &poly);
 
     std::unique_ptr<Geometry> densifyDefault(const Polygon* poly, double tolerance);
 
@@ -71,6 +73,8 @@ private:
     // double inputWidth;
     // double inputHeight;
 
+
+    std::size_t findWidestAngle(const LinearRing* ring) const;
 
 
 };

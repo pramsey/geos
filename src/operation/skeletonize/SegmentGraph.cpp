@@ -15,12 +15,15 @@
  #include <geos/operation/skeletonize/SegmentGraph.h>
  #include <geos/geom/Coordinate.h>
  #include <geos/geom/CoordinateSequence.h>
+ #include <geos/geom/GeometryFactory.h>
  #include <geos/geom/LineSegment.h>
  #include <geos/geom/LineString.h>
  #include <geos/geom/MultiLineString.h>
  #include <geos/util/GEOSException.h>
  
- 
+ #include <queue>
+
+
  using geos::geom::Coordinate;
  using geos::geom::CoordinateSequence;
  using geos::geom::LineSegment;
@@ -35,7 +38,7 @@ namespace skeletonize { // geos.operation.skeletonize
 
 /* private */
 void
-SegmentGraph::buildAdjacencyList(void)
+SegmentGraph::build(void)
 {
     std::vector<std::tuple<uint32_t, uint32_t, double>> edges;
 
@@ -78,6 +81,13 @@ SegmentGraph::buildAdjacencyList(void)
     return;
 }
 
+void
+SegmentGraph::clear(void)
+{
+    m_adj.clear();
+    m_vertexList.clear();
+    m_vertexMap.clear();
+}
 
 /* private */
 uint32_t
@@ -97,6 +107,131 @@ SegmentGraph::mapVertex(const CoordinateXY& v)
     }
     m_vertexMap[v] = {id, count};
     return id;
+}
+
+
+/* public */
+std::vector<uint32_t>
+SegmentGraph::endVertices()
+{
+    std::vector<uint32_t> ends;
+    // Map (Coordinate, (Id, Cardinality))
+    for (const auto& entry : m_vertexMap) {
+        uint32_t id = entry.second.first;
+        uint32_t cardinality = entry.second.second;
+        if (cardinality == 1) {
+            ends.push_back(id);
+        }
+    }
+    return ends;
+}
+
+
+std::pair<std::vector<uint32_t>, double>
+SegmentGraph::shortestPath(uint32_t startVertex, uint32_t endVertex)
+{
+    const double UnknownDist = std::numeric_limits<double>::max();
+    const uint32_t UnknownVertex = std::numeric_limits<uint32_t>::max();
+    std::vector<double> dist(m_vertexCount, UnknownDist);
+    std::vector<uint32_t> parent(m_vertexCount, UnknownVertex); // To reconstruct path
+
+    std::priority_queue<
+        std::pair<double, uint32_t>,
+        std::vector<std::pair<double, uint32_t>>,
+        std::greater<>> pq;
+
+    dist[startVertex] = 0.0;
+    pq.emplace(0.0, startVertex);
+
+    while (!pq.empty()) {
+        double d = pq.top().first;
+        uint32_t u = pq.top().second;
+        pq.pop();
+
+        // Stop early if endVertex is reached
+        if (u == endVertex) break;
+
+        if (d > dist[u]) continue;
+
+        for (const auto& pr : m_adj[u]) {
+            uint32_t v = pr.first;
+            double weight = pr.second;
+            double newDist = dist[u] + weight;
+            if (newDist < dist[v]) {
+                dist[v] = newDist;
+                parent[v] = u; // Store where v came from
+                pq.emplace(newDist, v);
+            }
+        }
+    }
+
+    // If target is unreachable
+    if (std::isnan(dist[endVertex]))
+        return {{}, UnknownDist};
+
+    // Reconstruct path from target to source
+    std::vector<uint32_t> path;
+    for (uint32_t at = endVertex; at != UnknownVertex; at = parent[at]) {
+        path.push_back(at);
+    }
+    reverse(path.begin(), path.end());
+
+    return {path, dist[endVertex]};
+}
+
+
+std::vector<uint32_t>
+SegmentGraph::longestPath(uint32_t startVertex, std::vector<uint32_t>& ends)
+{
+    double maxDist = 0.0;
+    std::vector<uint32_t> maxPath;
+    for (uint32_t endVertex : ends) {
+        if (endVertex == startVertex)
+            continue;
+        auto result = shortestPath(startVertex, endVertex);
+        double dist = result.second;
+        if (dist > maxDist) {
+            maxDist = dist;
+            maxPath = result.first;
+        }
+    }
+    return maxPath;
+}
+
+
+std::vector<uint32_t>
+SegmentGraph::longestPath(std::vector<uint32_t>& ends)
+{
+    // Pick any vertex in the set of ends and use that
+    // to calculate a temporary maximal route
+    uint32_t aStart = ends[0];
+    std::vector<uint32_t> longishPath = longestPath(aStart, ends);
+    // Taking the other end of the maximal route, and finding
+    // the longest route from there, gives us the
+    // overall longest route for the set
+    uint32_t longerStart = longishPath[longishPath.size()-1];
+    std::vector<uint32_t> longPath = longestPath(longerStart, ends);
+    return longPath;
+}
+
+
+std::unique_ptr<LineString>
+SegmentGraph::longestPath()
+{
+    // Get fresh build of graph structures
+    clear();
+    build();
+
+    std::vector<uint32_t> graphEnds = endVertices();
+    std::vector<uint32_t> vertexPath = longestPath(graphEnds);
+
+    // Convert path of ids into geometric path
+    std::unique_ptr<CoordinateSequence> cs = std::make_unique<CoordinateSequence>();
+    for (auto vertexId : vertexPath) {
+        CoordinateXY c = m_vertexList[vertexId];
+        cs->add(c, false);
+    }
+    return m_inputSegments.getFactory()->createLineString(std::move(cs));
 }
 
 
