@@ -22,12 +22,9 @@
 namespace geos {
 namespace geom {
 class Geometry;
+class LinearRing;
 class MultiLineString;
 class Polygon;
-}
-namespace operation {
-namespace skeletonize {
-}
 }
 }
 
@@ -37,20 +34,44 @@ namespace skeletonize { // geos::operation::skeletonize
 
 class GEOS_DLL Skeletonizer {
 
+    using Geometry = geos::geom::Geometry;
+    using MultiLineString = geos::geom::MultiLineString;
+    using Polygon = geos::geom::Polygon;
+    using LinearRing = geos::geom::LinearRing;
 
 public:
 
-    Skeletonizer(const geos::geom::Polygon &poly)
+    Skeletonizer(const Polygon &poly)
         : inputPolygon(poly)
         {};
 
-    std::unique_ptr<geom::MultiLineString> skeletonize();
+    std::unique_ptr<MultiLineString> skeletonize();
 
-    static std::unique_ptr<geom::MultiLineString> skeletonize(const geom::Polygon &poly);
+    static std::unique_ptr<MultiLineString> skeletonize(const Polygon &poly);
+
+    std::unique_ptr<Geometry> densifyDefault(const Polygon* poly, double tolerance);
+
+    std::unique_ptr<Geometry> densifyUniformly(const Polygon* poly, double tolerance);
+
+    std::unique_ptr<LinearRing> densifyUniformly(const LinearRing* ring, double tolerance);
+
 
 private:
 
-    const geom::Polygon &inputPolygon;
+    struct SegmentStatistics {
+        std::size_t numSegments;
+        double totalLength;
+        double medianLength;
+        double averageLength;
+        double minLength;
+        double maxLength;
+    };
+
+    const geom::Polygon& inputPolygon;
+    // double inputWidth;
+    // double inputHeight;
+
+
 
 };
 

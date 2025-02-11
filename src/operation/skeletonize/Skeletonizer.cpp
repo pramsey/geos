@@ -13,37 +13,158 @@
  **********************************************************************/
 
 #include <geos/operation/skeletonize/Skeletonizer.h>
+#include <geos/geom/Coordinate.h>
+#include <geos/geom/CoordinateSequence.h>
 #include <geos/geom/Geometry.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/GeometryFilter.h>
+#include <geos/geom/LinearRing.h>
+#include <geos/geom/LineSegment.h>
+#include <geos/geom/LineString.h>
 #include <geos/geom/MultiLineString.h>
 #include <geos/geom/Polygon.h>
+#include <geos/geom/prep/PreparedPolygon.h>
+#include <geos/geom/util/Densifier.h>
+#include <geos/triangulate/VoronoiDiagramBuilder.h>
 #include <geos/util/GEOSException.h>
+
+using geos::geom::Coordinate;
+using geos::geom::CoordinateSequence;
+using geos::geom::GeometryTypeId;
+using geos::geom::Geometry;
+using geos::geom::GeometryFactory;
+using geos::geom::GeometryFilter;
+using geos::geom::LinearRing;
+using geos::geom::LineSegment;
+using geos::geom::LineString;
+using geos::geom::MultiLineString;
+using geos::geom::Polygon;
+using geos::geom::prep::PreparedPolygon;
+using geos::geom::util::Densifier;
+using geos::triangulate::VoronoiDiagramBuilder;
+
 
 namespace geos {
 namespace operation {   // geos.operation
 namespace skeletonize { // geos.operation.skeletonize
 
 
-using geos::geom::GeometryTypeId;
-using geos::geom::Geometry;
-using geos::geom::MultiLineString;
-using geos::geom::Polygon;
-
-
 /* public static */
-std::unique_ptr<geom::MultiLineString>
-Skeletonizer::skeletonize(const Polygon &poly)
+std::unique_ptr<MultiLineString>
+Skeletonizer::skeletonize(const Polygon& poly)
 {
     Skeletonizer skel(poly);
     return skel.skeletonize();
 }
 
 
+std::unique_ptr<Geometry>
+Skeletonizer::densifyDefault(const Polygon* poly, double tolerance)
+{
+    return Densifier::densify(poly, tolerance);
+}
+
+
+std::unique_ptr<Geometry>
+Skeletonizer::densifyUniformly(const Polygon* poly, double tolerance)
+{
+    auto denseExtRing = densifyUniformly(poly->getExteriorRing(), tolerance);
+    const GeometryFactory* inputFactory = inputPolygon.getFactory();
+
+    std::vector<std::unique_ptr<LinearRing>> denseIntRings;
+    for (std::size_t i = 0; i < poly->getNumInteriorRing(); i++) {
+        auto denseRing = densifyUniformly(poly->getInteriorRingN(i), tolerance);
+        denseIntRings.emplace_back(denseRing.release());
+    }
+    std::unique_ptr<Polygon> result = inputFactory->createPolygon(std::move(denseExtRing), std::move(denseIntRings));
+    return result;
+}
+
+
+std::unique_ptr<LinearRing>
+Skeletonizer::densifyUniformly(const LinearRing* ring, double tolerance)
+{
+    const GeometryFactory* inputFactory = inputPolygon.getFactory();
+    const CoordinateSequence* coords = ring->getCoordinatesRO();
+    auto denseCoords = std::make_unique<CoordinateSequence>();
+
+    LineSegment seg;
+    double remainder = 0.0;
+    for (std::size_t i = 1; i < coords->size(); i++) {
+        seg.p0 = coords->getAt<Coordinate>(i-1);
+        seg.p1 = coords->getAt<Coordinate>(i);
+        double segLen = seg.getLength();
+
+        // First coordinate is always added
+        denseCoords->add(seg.p0, false);
+
+        // No room to densify this small segment
+        if (tolerance >= segLen)
+            continue;
+
+        // Add first sub-point
+        Coordinate c;
+        seg.pointAlong(remainder / segLen, c);
+        denseCoords->add(c, false);
+        remainder = segLen - remainder;
+
+        // Add as many other points as we can
+        while (remainder > tolerance) {
+            remainder -= tolerance;
+            seg.pointAlong(1.0 - (remainder/segLen), c);
+            denseCoords->add(c, false);
+        }
+    }
+
+    // add final point in ring
+    denseCoords->add(seg.p1, false);
+
+    return inputFactory->createLinearRing(std::move(denseCoords));
+}
+
 /* public */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize()
 {
-    GeometryTypeId id = inputPolygon.getGeometryTypeId();
-    return id ? nullptr : nullptr;
+    std::cout << "GeometryTypeId == " << inputPolygon.getGeometryTypeId() << std::endl;
+    const GeometryFactory* inputFactory = inputPolygon.getFactory();
+
+    // Naive densifier
+    // auto denseInput = densifyDefault(&inputPolygon, 5.0);
+    auto denseInput = densifyUniformly(&inputPolygon, 6.0);
+
+    std::cout << *denseInput << std::endl << std::endl;
+
+    VoronoiDiagramBuilder builder;
+    //builder.setTolerance(tolerance);
+    builder.setSites(*denseInput);
+
+    std::unique_ptr<MultiLineString> allEdges = builder.getDiagramEdges(*inputFactory);
+
+    std::vector<const Geometry*> nonCrossingEdges;
+    PreparedPolygon preparedInput(&inputPolygon);
+
+    struct EdgeFilter : public GeometryFilter {
+
+        PreparedPolygon& filterPoly;
+        std::vector<const Geometry*>& edges;
+
+        EdgeFilter(PreparedPolygon& fp, std::vector<const Geometry*>& e)
+            : filterPoly(fp)
+            , edges(e) {};
+
+        void filter_ro(const Geometry* geom) override {
+            if (filterPoly.contains(geom))
+                edges.push_back(geom);
+        }
+    };
+
+    EdgeFilter ef(preparedInput, nonCrossingEdges);
+    allEdges->apply_ro(&ef);
+
+    auto edgesFiltered = inputFactory->createMultiLineString(nonCrossingEdges);
+
+    return edgesFiltered;
 }
 
 
