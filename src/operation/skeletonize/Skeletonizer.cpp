@@ -101,18 +101,17 @@ Skeletonizer::findWidestAngle(const CoordinateSequence* cs) const
 
 
 std::unique_ptr<CoordinateSequence>
-Skeletonizer::startSequenceAtWidest(const CoordinateSequence* seq)
+Skeletonizer::reorientSequence(const CoordinateSequence* seq, std::size_t startIndex)
 {
-    std::size_t widest = findWidestAngle(seq);
-    auto reorientedSeq = std::make_unique<CoordinateSequence>(seq->size());
+    auto reorientedSeq = std::make_unique<CoordinateSequence>();
     // Start at widest and take everything up to the end
-    for (std::size_t i = widest; i < seq->size(); i++) {
+    for (std::size_t i = startIndex; i < seq->size(); i++) {
         reorientedSeq->add(seq->getAt(i));
     }
     // Skip first point (dupes the last) and also
     // take widest point again, so new ring has dupe
     // start/end points
-    for (std::size_t i = 1; i <= widest; i++) {
+    for (std::size_t i = 1; i <= startIndex; i++) {
         reorientedSeq->add(seq->getAt(i));
     }
     return reorientedSeq;
@@ -148,6 +147,16 @@ Skeletonizer::densifyUniformly(const LinearRing* ring, double tolerance)
     const GeometryFactory* inputFactory = inputPolygon.getFactory();
     const CoordinateSequence* coords = ring->getCoordinatesRO();
     auto denseCoords = std::make_unique<CoordinateSequence>();
+    std::unique_ptr<CoordinateSequence> tmpCoords;
+
+    // Reorient the ring if the start/end is particularly
+    // acute. Avoids some stair-stepping effects in interior
+    // paths.
+    if (startPointAngle(coords) < M_PI / 2.0) {
+        std::size_t widestIndex = findWidestAngle(coords);
+        tmpCoords = reorientSequence(coords, widestIndex);
+        coords = tmpCoords.get();
+    }
 
     LineSegment seg;
     double remainder = 0.0;

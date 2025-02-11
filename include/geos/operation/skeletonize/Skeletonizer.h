@@ -79,7 +79,7 @@ private:
 
     std::size_t findWidestAngle(const CoordinateSequence* ring) const;
 
-    std::unique_ptr<CoordinateSequence> startSequenceAtWidest(const CoordinateSequence* seq);
+    std::unique_ptr<CoordinateSequence> reorientSequence(const CoordinateSequence* seq, std::size_t startIndex);
 
 };
 
