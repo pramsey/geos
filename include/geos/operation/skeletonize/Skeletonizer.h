@@ -26,6 +26,7 @@ class Geometry;
 class LinearRing;
 class LineString;
 class MultiLineString;
+class MultiPoint;
 class Polygon;
 }
 }
@@ -39,47 +40,47 @@ class GEOS_DLL Skeletonizer {
     using CoordinateSequence = geos::geom::CoordinateSequence;
     using Geometry = geos::geom::Geometry;
     using MultiLineString = geos::geom::MultiLineString;
+    using MultiPoint = geos::geom::MultiPoint;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
     using LineString = geos::geom::LineString;
 
 public:
 
-    Skeletonizer(const Polygon &poly)
-        : inputPolygon(poly)
-        {};
+    Skeletonizer(const Polygon &poly, const MultiPoint &pts);
+
+    static std::unique_ptr<LineString> skeletonize(
+        const Polygon &poly,
+        const MultiPoint &pts);
 
     std::unique_ptr<LineString> skeletonize();
-
-    static std::unique_ptr<LineString> skeletonize(const Polygon &poly);
-
-    std::unique_ptr<Geometry> densifyDefault(const Polygon* poly, double tolerance);
-
-    std::unique_ptr<Geometry> densifyUniformly(const Polygon* poly, double tolerance);
-
-    std::unique_ptr<LinearRing> densifyUniformly(const LinearRing* ring, double tolerance);
 
 
 private:
 
     struct SegmentStatistics {
-        std::size_t numSegments;
-        double totalLength;
-        double medianLength;
-        double averageLength;
-        double minLength;
-        double maxLength;
+        double numSegments = 0.0;
+        double averageLength = 0.0;
+        double stdevLength = 0.0;
+        double minLength = 0.0;
+        double maxLength = 0.0;
+        double width = 0.0;
+        double height = 0.0;
     };
 
     const geom::Polygon& inputPolygon;
+    const geom::MultiPoint& inputPoints;
     // double inputWidth;
     // double inputHeight;
 
-    double startPointAngle(const CoordinateSequence* cs) const;
+    void calculateStatistics(
+        const CoordinateSequence* cs,
+        SegmentStatistics& stats) const;
 
-    std::size_t findWidestAngle(const CoordinateSequence* ring) const;
+    void calculateStatistics(
+        const Polygon& poly,
+        SegmentStatistics& stats) const;
 
-    std::unique_ptr<CoordinateSequence> reorientSequence(const CoordinateSequence* seq, std::size_t startIndex);
 
 };
 

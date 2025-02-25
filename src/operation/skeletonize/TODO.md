@@ -3,13 +3,15 @@
 
 ## Pre-Processing
 
-- **Densification** : In the case of a ring with start/end point at an acute angle, the densification can lead to bad results (edges outside polygon). Need to detect case and move start/end to safe, oblique angle.
+- **DONE - Densification** : In the case of a ring with start/end point at an acute angle, the densification can lead to bad results (edges outside polygon). Need to detect case and move start/end to safe, oblique angle.
 
-- **Bad Inputs** : Remove any zero-length segments
+- **Bad Inputs** : Remove any zero-length and small-length segments
 
 - **Bad Inputs** : DP away unnecessary vertices before adding in the new dense points. Hopefully removes very short edges. Have to do so without losing the input/output vertices.
 
 - **Bad Inputs** : Remove spikes, gores, and zigzags?
+
+- **Bad Inputs** : Search for edges that are spatially "close" while also being a long distance "along the ring" from the query edge. These are places where the ring folds in on itself, or has a narrow channel with another ring. Densify these edges even more. Build STRee, and test every edge for this condition.
 
 - **Densification** : Calculate correct level of densification? Relative to object size? Relative to smallest segment? Relative to minimum clearance?
 

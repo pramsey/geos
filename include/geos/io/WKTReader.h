@@ -105,7 +105,7 @@ public:
     /// Parse a WKT string returning a Geometry
     template<typename T>
     std::unique_ptr<T> read(const std::string& wkt) const {
-        auto g = read(wkt);
+        std::unique_ptr<geom::Geometry> g = read(wkt);
         auto gt = dynamic_cast<const T*>(g.get());
         if (!gt) {
             // Can improve this message once there's a good way to get a string repr of T
