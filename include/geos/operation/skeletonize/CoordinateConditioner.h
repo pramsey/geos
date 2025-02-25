@@ -103,6 +103,11 @@ private:
         const CoordinateXY& p1,
         double segmentLengthFraction) const;
 
+    CoordinateXY pointAlongDistance(
+        const CoordinateXY& p0,
+        const CoordinateXY& p1,
+        double distance) const;
+
     std::unique_ptr<CoordinateSequence> densify(
         const CoordinateSequence& coords,
         double maxLen) const;

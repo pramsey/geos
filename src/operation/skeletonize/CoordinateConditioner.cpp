@@ -259,6 +259,17 @@ CoordinateConditioner::pointAlong(
 };
 
 
+CoordinateXY
+CoordinateConditioner::pointAlongDistance(
+    const CoordinateXY& p0,
+    const CoordinateXY& p1,
+    double distance) const
+{
+    double fraction = distance / p0.distance(p1);
+    return pointAlong(p0, p1, fraction);
+};
+
+
 std::unique_ptr<CoordinateSequence>
 CoordinateConditioner::densify(
     const CoordinateSequence& coords,
@@ -293,6 +304,7 @@ CoordinateConditioner::densify(
 
     return denseCoords;
 }
+
 
 
 
