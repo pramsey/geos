@@ -235,6 +235,29 @@ SegmentGraph::longestPath()
 }
 
 
+std::unique_ptr<MultiLineString>
+SegmentGraph::longestPaths()
+{
+    // Get fresh build of graph structures
+    clear();
+    build();
+
+    std::vector<uint32_t> graphEnds = endVertices();
+    std::vector<uint32_t> vertexPath = longestPath(graphEnds);
+
+    // Convert path of ids into geometric path
+    std::unique_ptr<CoordinateSequence> cs = std::make_unique<CoordinateSequence>();
+    for (auto vertexId : vertexPath) {
+        CoordinateXY c = m_vertexList[vertexId];
+        cs->add(c, false);
+    }
+    auto path = m_inputSegments.getFactory()->createLineString(std::move(cs));
+    std::vector<std::unique_ptr<LineString>> lines;
+    lines.emplace_back(path.release());
+    return m_inputSegments.getFactory()->createMultiLineString(std::move(lines));
+}
+
+
 std::ostream&
 operator<< (std::ostream& os, const SegmentGraph& ss)
 {

@@ -65,6 +65,10 @@ public:
     // longest path through the graph
     std::unique_ptr<LineString> longestPath();
 
+    // Based on the input segments, calculate the
+    // longest path through the graph
+    std::unique_ptr<MultiLineString> longestPaths();
+
     // Returns ordered vector of vertex numbers
     // of the shortest path between start and end vertices
     std::pair<std::vector<uint32_t>, double> shortestPath(uint32_t startVertex, uint32_t endVertex);

@@ -15,6 +15,7 @@
 #include <geos/operation/skeletonize/Skeletonizer.h>
 #include <geos/operation/skeletonize/SegmentGraph.h>
 #include <geos/operation/skeletonize/CoordinateConditioner.h>
+#include <geos/operation/skeletonize/InputOutputs.h>
 #include <geos/geom/Coordinate.h>
 #include <geos/geom/CoordinateSequence.h>
 #include <geos/geom/Geometry.h>
@@ -43,17 +44,30 @@ namespace geos {
 namespace operation {   // geos.operation
 namespace skeletonize { // geos.operation.skeletonize
 
-Skeletonizer::Skeletonizer(const Polygon &poly, const MultiPoint& points)
+Skeletonizer::Skeletonizer(const Polygon &poly, const MultiPoint* points)
         : inputPolygon(poly)
         , inputPoints(points)
         {};
 
+Skeletonizer::Skeletonizer(const Polygon &poly)
+        : inputPolygon(poly)
+        , inputPoints(nullptr)
+        {};
+
 
 /* public static */
-std::unique_ptr<LineString>
+std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(const Polygon& poly, const MultiPoint& points)
 {
-    Skeletonizer skel(poly, points);
+    Skeletonizer skel(poly, &points);
+    return skel.skeletonize();
+}
+
+/* public static */
+std::unique_ptr<MultiLineString>
+Skeletonizer::skeletonize(const Polygon& poly)
+{
+    Skeletonizer skel(poly, nullptr);
     return skel.skeletonize();
 }
 
@@ -105,12 +119,14 @@ Skeletonizer::calculateStatistics(
 
 
 /* public */
-std::unique_ptr<LineString>
+std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize()
 {
     const GeometryFactory* inputFactory = inputPolygon.getFactory();
 
+    //
     // Figure out what we know about this geometry
+    //
     SegmentStatistics stats;
     calculateStatistics(inputPolygon, stats);
     double tolerance = 1.0;
@@ -118,21 +134,55 @@ Skeletonizer::skeletonize()
 
     std::cout << "inputPolygon" << std::endl << inputPolygon << std::endl << std::endl;
 
-    // Condition the input vertices by
-    // removing spikes/gores
-    // removing dupes and very short segments
-    // adding extra segments to force maximum segment length
-    std::unique_ptr<Geometry> conditionedInput =
+    //
+    // Condition the input vertices to make the subsequent
+    // voronoi results more attractive and less likely to
+    // have boundary interactions. Removing very short lines
+    // and very acute angles should help.
+    //
+    std::unique_ptr<MultiLineString> conditionedInput =
         CoordinateConditioner::condition(
-            &inputPolygon, tolerance, maxLen);
+            inputPolygon, tolerance);
 
-    std::cout << "conditionedInput" << std::endl << *conditionedInput << std::endl << std::endl;
+    std::cout << "conditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
 
+    //
+    // If user has provided input/output points, we need to
+    // add gapped points at that location
+    //
+    if (inputPoints != nullptr) {
+        conditionedInput = InputOutputs::addInputOutputGaps(
+            *conditionedInput,
+            *inputPoints,
+            tolerance);
+    }
+
+    //
+    // Densify the input vertices to make sure that the longest
+    // edge length is quite a bit smaller than the overall object
+    // size. This makes the voronoi edges, particular the central
+    // "skeletal" ones shorter and formed into nice curves more.
+    //
+    std::unique_ptr<MultiLineString> densifiedOutput =
+        CoordinateConditioner::densify(
+            *conditionedInput, maxLen);
+
+    std::cout << "densifiedOutput" << std::endl << densifiedOutput->toString() << std::endl << std::endl;
+
+
+    //
+    // This is a point voronoi, and the edges created
+    // partition the space so they are equidistant to the
+    // input points. This makes some of the edges (the ones
+    // near the middle of the shape) excellent candidates to
+    // form into a skeleton line.
+    //
     VoronoiDiagramBuilder builder;
     //builder.setTolerance(tolerance);
-    builder.setSites(*conditionedInput);
+    builder.setSites(*densifiedOutput);
 
-    std::unique_ptr<MultiLineString> allEdges = builder.getDiagramEdges(*inputFactory);
+    std::unique_ptr<MultiLineString> allEdges =
+        builder.getDiagramEdges(*inputFactory);
 
     std::cout << "allEdges" << std::endl;
     std::cout << *allEdges << std::endl << std::endl;
@@ -162,11 +212,11 @@ Skeletonizer::skeletonize()
     std::cout << "edgesFiltered" << std::endl;
     std::cout << *edgesFiltered << std::endl;
 
-    if (inputPoints.getNumGeometries() > 0)
+    if (inputPoints && inputPoints->getNumGeometries() > 0)
         std::cout << "inputPoints.getNumGeometries() > 0" << std::endl;
 
     SegmentGraph sg(*edgesFiltered);
-    auto skeletonLine = sg.longestPath();
+    auto skeletonLine = sg.longestPaths();
 
     return skeletonLine;
 }

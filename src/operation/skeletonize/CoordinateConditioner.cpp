@@ -19,6 +19,8 @@
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/Geometry.h>
 #include <geos/geom/LinearRing.h>
+#include <geos/geom/LineString.h>
+#include <geos/geom/MultiLineString.h>
 #include <geos/geom/Polygon.h>
 
 #include <queue>
@@ -31,6 +33,8 @@ using geos::geom::Geometry;
 using geos::geom::GeometryFactory;
 using geos::geom::Polygon;
 using geos::geom::LinearRing;
+using geos::geom::LineString;
+using geos::geom::MultiLineString;
 
 
 namespace geos {
@@ -39,42 +43,40 @@ namespace skeletonize { // geos.operation.skeletonize
 
 
 /* public static */
-std::unique_ptr<Geometry>
+std::unique_ptr<MultiLineString>
 CoordinateConditioner::condition(
-    const Polygon* poly,
-    double tolerance,
-    double maxLen)
+    const Polygon& poly,
+    double tolerance)
 {
     CoordinateConditioner cc;
-    return cc.conditionPolygon(poly, tolerance, maxLen);
-}
-
-
-/* public */
-std::unique_ptr<Geometry>
-CoordinateConditioner::conditionPolygon(
-    const Polygon* poly,
-    double tolerance,
-    double maxLen) const
-{
-    std::unique_ptr<LinearRing> extRing = conditionRing(poly->getExteriorRing(), tolerance, maxLen);
-
-    std::vector<std::unique_ptr<LinearRing>> intRings;
-    for (std::size_t i = 0; i < poly->getNumInteriorRing(); i++) {
-        auto intRing = conditionRing(poly->getInteriorRingN(i), tolerance, maxLen);
-        intRings.emplace_back(intRing.release());
-    }
-    std::unique_ptr<Polygon> result = poly->getFactory()->createPolygon(std::move(extRing), std::move(intRings));
-    return result;
+    return cc.conditionPolygon(poly, tolerance);
 }
 
 
 /* private */
-std::unique_ptr<LinearRing>
+std::unique_ptr<MultiLineString>
+CoordinateConditioner::conditionPolygon(
+    const Polygon& poly,
+    double tolerance) const
+{
+    std::vector<std::unique_ptr<LineString>> outputLines;
+
+    std::unique_ptr<LineString> extRing = conditionRing(poly.getExteriorRing(), tolerance);
+    outputLines.emplace_back(extRing.release());
+
+    for (std::size_t i = 0; i < poly.getNumInteriorRing(); i++) {
+        auto intRing = conditionRing(poly.getInteriorRingN(i), tolerance);
+        outputLines.emplace_back(intRing.release());
+    }
+    return poly.getFactory()->createMultiLineString(std::move(outputLines));
+}
+
+
+/* private */
+std::unique_ptr<LineString>
 CoordinateConditioner::conditionRing(
     const LinearRing* ring,
-    double tolerance,
-    double maxLen) const
+    double tolerance) const
 {
     // Convert to working coordinate sequence
     std::unique_ptr<CoordinateSequence> coords = ring->getCoordinatesRO()->clone();
@@ -92,13 +94,8 @@ CoordinateConditioner::conditionRing(
         cleaned = reorientCoordinates(*cleaned, widestIndex);
     }
 
-    // Add vertices so that no segment is longer than maxlen
-    std::unique_ptr<CoordinateSequence> densified = densify(*cleaned, maxLen);
-
-    // Duplicate start/end coordinates
-    densified->add(densified->getAt(0), true);
-
-    return ring->getFactory()->createLinearRing(std::move(densified));
+    // Return conditioned LineString
+    return ring->getFactory()->createLineString(std::move(cleaned));
 }
 
 
@@ -251,7 +248,7 @@ CoordinateXY
 CoordinateConditioner::pointAlong(
     const CoordinateXY& p0,
     const CoordinateXY& p1,
-    double segmentLengthFraction) const
+    double segmentLengthFraction)
 {
     return CoordinateXY(
         p0.x + segmentLengthFraction * (p1.x - p0.x),
@@ -263,25 +260,53 @@ CoordinateXY
 CoordinateConditioner::pointAlongDistance(
     const CoordinateXY& p0,
     const CoordinateXY& p1,
-    double distance) const
+    double distance)
 {
     double fraction = distance / p0.distance(p1);
     return pointAlong(p0, p1, fraction);
 };
 
 
-std::unique_ptr<CoordinateSequence>
-CoordinateConditioner::densify(
-    const CoordinateSequence& coords,
+/* public static */
+std::unique_ptr<MultiLineString>
+CoordinateConditioner::densify(const MultiLineString& mls,
+    double maxLen)
+{
+    CoordinateConditioner cc;
+    return cc.densifyMultiLineString(mls, maxLen);
+}
+
+
+/* private */
+std::unique_ptr<MultiLineString>
+CoordinateConditioner::densifyMultiLineString(
+    const MultiLineString& mls,
     double maxLen) const
 {
-    std::size_t sz = coords.size();
+    std::vector<std::unique_ptr<LineString>> outputLines;
+    for (std::size_t i = 0; i < mls.getNumGeometries(); i++) {
+        const LineString* ls = mls.getGeometryN(i);
+        const CoordinateSequence* coords = ls->getCoordinatesRO();
+        std::unique_ptr<CoordinateSequence> densified = densifyCoordinateSequence(coords, maxLen);
+        std::unique_ptr<LineString> ols = mls.getFactory()->createLineString(std::move(densified));
+        outputLines.emplace_back(ols.release());
+    }
+    return mls.getFactory()->createMultiLineString(std::move(outputLines));
+};
+
+/* Private */
+std::unique_ptr<CoordinateSequence>
+CoordinateConditioner::densifyCoordinateSequence(
+    const CoordinateSequence* coords,
+    double maxLen) const
+{
+    std::size_t sz = coords->size();
     std::unique_ptr<CoordinateSequence> denseCoords(new CoordinateSequence(0, false, false));
 
     double remainder = 0.0;
     for (std::size_t i = 0; i < sz; i++) {
-        const CoordinateXY& p0 = coords.getAt<CoordinateXY>((i+0) % sz);
-        const CoordinateXY& p1 = coords.getAt<CoordinateXY>((i+1) % sz);
+        auto p0 = coords->getAt<CoordinateXY>((i+0) % sz);
+        auto p1 = coords->getAt<CoordinateXY>((i+1) % sz);
         double segLen = p0.distance(p1);
 
         // First coordinate is always added
@@ -304,7 +329,6 @@ CoordinateConditioner::densify(
 
     return denseCoords;
 }
-
 
 
 

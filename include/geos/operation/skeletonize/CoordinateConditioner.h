@@ -27,6 +27,8 @@
  class CoordinateSequence;
  class Polygon;
  class LinearRing;
+ class LineString;
+ class MultiLineString;
  }
  }
 
@@ -42,29 +44,41 @@ class CoordinateConditioner {
     using CoordinateSequence = geos::geom::CoordinateSequence;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
-
+    using LineString = geos::geom::LineString;
+    using MultiLineString = geos::geom::MultiLineString;
 
 public:
 
     CoordinateConditioner() {};
 
-    static std::unique_ptr<Geometry> condition(
-        const Polygon* poly,
-        double tolerance,
+    static std::unique_ptr<MultiLineString> condition(
+        const Polygon& poly,
+        double tolerance);
+
+    static std::unique_ptr<MultiLineString> densify(
+        const MultiLineString& mls,
         double maxLen);
 
-    std::unique_ptr<Geometry> conditionPolygon(
-        const Polygon* poly,
-        double tolerance,
-        double maxLen) const;
+    static CoordinateXY pointAlong(
+        const CoordinateXY& p0,
+        const CoordinateXY& p1,
+        double segmentLengthFraction);
+
+    static CoordinateXY pointAlongDistance(
+        const CoordinateXY& p0,
+        const CoordinateXY& p1,
+        double distance);
 
 
 private:
 
-    std::unique_ptr<LinearRing> conditionRing(
-        const LinearRing* cs,
-        double tolerance,
-        double maxLen) const;
+    std::unique_ptr<MultiLineString> conditionPolygon(
+        const Polygon& poly,
+        double tolerance) const;
+
+    std::unique_ptr<LineString> conditionRing(
+        const LinearRing* lr,
+        double tolerance) const;
 
     std::unique_ptr<CoordinateSequence> removeSmallErrors(
         const CoordinateSequence& coords,
@@ -98,18 +112,12 @@ private:
     double startPointAngle(
         const CoordinateSequence& cs) const;
 
-    CoordinateXY pointAlong(
-        const CoordinateXY& p0,
-        const CoordinateXY& p1,
-        double segmentLengthFraction) const;
+    std::unique_ptr<MultiLineString> densifyMultiLineString(
+        const MultiLineString& mls,
+        double maxLen) const;
 
-    CoordinateXY pointAlongDistance(
-        const CoordinateXY& p0,
-        const CoordinateXY& p1,
-        double distance) const;
-
-    std::unique_ptr<CoordinateSequence> densify(
-        const CoordinateSequence& coords,
+    std::unique_ptr<CoordinateSequence> densifyCoordinateSequence(
+        const CoordinateSequence* cs,
         double maxLen) const;
 
 };
