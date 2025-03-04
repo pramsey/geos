@@ -85,7 +85,7 @@ struct test_polygonnodeconverter_data {
         for (std::size_t i = 0; i < ns.size(); i++) {
             delete ns[i]->getVertex(0);
             delete ns[i]->getVertex(1);
-            delete ns[i];
+            delete ns[];
         }
     }
 
