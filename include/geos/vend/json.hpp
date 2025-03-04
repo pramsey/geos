@@ -11082,8 +11082,8 @@ class binary_reader
     }
 
     /*!
-    @param[out] dim  an integer vector storing the ND array dimensions
-    @return whether reading ND array size vector is successful
+    @param[out] dim  an integer vector storing the array dimensions
+    @return whether reading array size vector is successful
     */
     bool get_ubjson_ndarray_size(std::vector<size_t>& dim)
     {
@@ -11369,7 +11369,7 @@ class binary_reader
     for a more compact representation.
 
     @param[out] result  pair of the size and the type
-    @param[in] inside_ndarray  whether the parser is parsing an ND array dimensional vector
+    @param[in] inside_ndarray  whether the parser is parsing an array dimensional vector
 
     @return whether pair creation completed
     */
