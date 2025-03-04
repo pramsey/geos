@@ -23,11 +23,17 @@ namespace geos {
 namespace geom {
 class CoordinateSequence;
 class Geometry;
+class GeometryFactory;
 class LinearRing;
 class LineString;
 class MultiLineString;
 class MultiPoint;
 class Polygon;
+}
+namespace operation {
+namespace distance {
+class GeometryLocation;
+}
 }
 }
 
@@ -39,11 +45,13 @@ class GEOS_DLL Skeletonizer {
 
     using CoordinateSequence = geos::geom::CoordinateSequence;
     using Geometry = geos::geom::Geometry;
+    using GeometryFactory = geos::geom::GeometryFactory;
     using MultiLineString = geos::geom::MultiLineString;
     using MultiPoint = geos::geom::MultiPoint;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
     using LineString = geos::geom::LineString;
+    using GeometryLocation = geos::operation::distance::GeometryLocation;
 
 public:
 
@@ -85,6 +93,13 @@ private:
         const Polygon& poly,
         SegmentStatistics& stats) const;
 
+    bool hasInOutPoints() const;
+
+    std::vector<const Geometry*> findContainedEdges(
+        const MultiLineString& allEdges) const;
+
+    std::vector<GeometryLocation> findInputOutputEdges(
+        const MultiLineString& allEdges) const;
 
 };
 

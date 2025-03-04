@@ -25,9 +25,15 @@
  namespace geos {
  namespace geom {
  class Geometry;
+ class GeometryFactory;
  class LineString;
  class LineSegment;
  class MultiLineString;
+ }
+ namespace operation {
+    namespace distance {
+        class GeometryLocation;
+    }
  }
  }
 
@@ -40,14 +46,21 @@ class SegmentGraph {
 
     using CoordinateXY = geos::geom::CoordinateXY;
     using Geometry = geos::geom::Geometry;
+    using GeometryFactory = geos::geom::GeometryFactory;
     using MultiLineString = geos::geom::MultiLineString;
     using LineString = geos::geom::LineString;
     using LineSegment = geos::geom::LineSegment;
+    using GeometryLocation = geos::operation::distance::GeometryLocation;
 
 public:
 
-    SegmentGraph(const MultiLineString& segs)
-        : m_inputSegments(segs)
+    SegmentGraph(
+        std::vector<const Geometry*>& segs,
+        std::vector<GeometryLocation>& inoutsegs,
+        const GeometryFactory* factory)
+        : m_containedEdges(segs)
+        , m_inoutEdges(inoutsegs)
+        , m_factory(factory)
         {};
 
     friend std::ostream& operator<< (std::ostream& os, const SegmentGraph& ss);
@@ -58,16 +71,12 @@ public:
     // map/list/adjacency structures
     void build();
 
-    // Removes all the data structures supporting the graph
-    void clear();
+    // Finds the longest pairwise path in the graph
+    std::unique_ptr<MultiLineString> longestPathSkeleton();
 
-    // Based on the input segments, calculate the
-    // longest path through the graph
-    std::unique_ptr<LineString> longestPath();
+    std::unique_ptr<MultiLineString> shortestPathSkeleton();
 
-    // Based on the input segments, calculate the
-    // longest path through the graph
-    std::unique_ptr<MultiLineString> longestPaths();
+
 
     // Returns ordered vector of vertex numbers
     // of the shortest path between start and end vertices
@@ -86,7 +95,29 @@ public:
 
 private:
 
-    const MultiLineString& m_inputSegments;
+
+    // All the voronoi edges that are fully contained
+    // in the polygon are in this list
+    std::vector<const Geometry*>& m_containedEdges;
+
+    // The closest voronoi edge to each in/out point
+    // has been noted in this list
+    std::vector<GeometryLocation>& m_inoutEdges;
+
+    // Factory to build output geometry
+    const GeometryFactory* m_factory;
+
+    // A list of vertices, with one vertex number
+    // for each input/output point we matched up
+    std::vector<uint32_t> m_inoutVertexList;
+
+    // A list of edges, with the vertex number of each
+    // end, and the length of the edge.
+    std::vector<std::tuple<uint32_t, uint32_t, double>> m_edgeList;
+
+    // Map (Vertex, Edge)
+    // Lookup an edge entry from a vertex number
+    std::map<uint32_t, uint32_t> m_edgeMap;
 
     // Map (Vertex, (ID, Cardinality))
     // Iterate to find all dangling vertices
@@ -110,6 +141,19 @@ private:
     // Lookup or generate the unique vertex number for this
     // coordinate
     uint32_t mapVertex(const CoordinateXY& v);
+
+    // True if the given coordinate has already
+    // been added to the vertex map
+    bool isVertex(const CoordinateXY& v) const;
+
+    // Utility functions to break up processing
+    // flow in build()
+    void buildContainedEdgeList();
+    void buildInOutEdgeList();
+    void buildAdjacencyList();
+
+    std::unique_ptr<LineString> pathToGeometry(
+        std::vector<uint32_t>& vertexPath) const;
 
 };
 

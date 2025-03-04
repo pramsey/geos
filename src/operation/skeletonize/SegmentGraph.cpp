@@ -12,6 +12,7 @@
  *
  **********************************************************************/
 
+ #include <geos/operation/distance/GeometryLocation.h>
  #include <geos/operation/skeletonize/SegmentGraph.h>
  #include <geos/geom/Coordinate.h>
  #include <geos/geom/CoordinateSequence.h>
@@ -20,7 +21,8 @@
  #include <geos/geom/LineString.h>
  #include <geos/geom/MultiLineString.h>
  #include <geos/util/GEOSException.h>
- 
+ #include <geos/operation/linemerge/LineMerger.h>
+
  #include <queue>
 
 
@@ -29,6 +31,8 @@
  using geos::geom::LineSegment;
  using geos::geom::LineString;
  using geos::geom::MultiLineString;
+ using geos::operation::distance::GeometryLocation;
+ using geos::operation::linemerge::LineMerger;
  
 
 namespace geos {
@@ -38,32 +42,15 @@ namespace skeletonize { // geos.operation.skeletonize
 
 /* private */
 void
-SegmentGraph::build(void)
+SegmentGraph::buildAdjacencyList()
 {
-    std::vector<std::tuple<uint32_t, uint32_t, double>> edges;
-
-    // The inputSegments are the MultiLineString output
-    // of VoronoiDiagramBuilder and are expected to all
-    // be two-point LineString with shared end points.
-    for (uint32_t i = 0; i < m_inputSegments.getNumGeometries(); i++) {
-        const LineString *ls = m_inputSegments.getGeometryN(i);
-        const CoordinateSequence *cs = ls->getCoordinatesRO();
-        auto& p0 = cs->getAt<CoordinateXY>(0);
-        auto& p1 = cs->getAt<CoordinateXY>(cs->size()-1);
-
-        // Add start/end indexes to a temporary list
-        uint32_t i0 = mapVertex(p0);
-        uint32_t i1 = mapVertex(p1);
-        double weight = p0.distance(p1);
-        edges.emplace_back(i0, i1, weight);
-    }
-
     // Populate adjacency list
     m_adj.resize(m_vertexCount);
-    for (const auto& edge : edges) {
+    for (const auto& edge : m_edgeList) {
         uint32_t i0 = std::get<0>(edge);
         uint32_t i1 = std::get<1>(edge);
         double weight = std::get<2>(edge);
+        // All our edges are bidirectional
         m_adj[i0].emplace_back(i1, weight);
         m_adj[i1].emplace_back(i0, weight);
     }
@@ -77,17 +64,110 @@ SegmentGraph::build(void)
         const CoordinateXY& v = entry.first;
         m_vertexList[id] = v;
     }
+}
+
+
+/* private */
+void
+SegmentGraph::buildContainedEdgeList()
+{
+    // The containedEdges are the MultiLineString output
+    // of VoronoiDiagramBuilder and are expected to all
+    // be two-point LineStrings with shared end points.
+    for (const auto* geom : m_containedEdges) {
+
+        const LineString *ls = dynamic_cast<const LineString*>(geom);
+        if(!ls)
+            continue;
+
+        // Read start/end coordinates from the edge
+        const CoordinateSequence *cs = ls->getCoordinatesRO();
+        auto& p0 = cs->getAt<CoordinateXY>(0);
+        auto& p1 = cs->getAt<CoordinateXY>(cs->size()-1);
+
+        // Look-up/generate the vertex number for each
+        // vertex coordinate, and calculate the edge weight
+        uint32_t i0 = mapVertex(p0);
+        uint32_t i1 = mapVertex(p1);
+        double weight = p0.distance(p1);
+        m_edgeList.emplace_back(i0, i1, weight);
+    }
+}
+
+
+/* private */
+void
+SegmentGraph::buildInOutEdgeList()
+{
+    for (const GeometryLocation& loc : m_inoutEdges) {
+
+        const Geometry* geomComp = loc.getGeometryComponent();
+        const LineString *ls = dynamic_cast<const LineString*>(geomComp);
+        if(!ls)
+            continue;
+
+        // Read start/end coordinates from the edge
+        const CoordinateSequence *cs = ls->getCoordinatesRO();
+        const auto& p0 = cs->getAt<CoordinateXY>(0);
+        const auto& p1 = cs->getAt<CoordinateXY>(cs->size()-1);
+
+        // Read input/output coordinate from the location
+        const auto& p2 = loc.getCoordinate();
+
+        // One end of the edge should connect to the
+        // existing set of interior edges. (Hope so!)
+        // We add the connecting vertex, and the known
+        // input/output point, thus ensuring the graph
+        // we generate connects up to the input/output
+        // points.
+        bool h0 = isVertex(p0);
+        bool h1 = isVertex(p1);
+        if (h0 && h1) {
+            throw std::runtime_error("edge doubly connects!");
+        }
+        else if (!(h0||h1)) {
+            throw std::runtime_error("edge does not connect!");
+        }
+        else {
+            // Vertex that connects to graph
+            uint32_t i0 = h0 ? mapVertex(p0) : mapVertex(p1);
+            // Vertex that is input/output point
+            uint32_t i2 = mapVertex(p2);
+            double weight = p0.distance(p2);
+            m_edgeList.emplace_back(i0, i2, weight);
+            // Save the vertex id of the in/out point
+            // so we can use as start/end point of shortest
+            // path calculations later
+            m_inoutVertexList.push_back(i2);
+        }
+    }
+}
+
+
+/* private */
+void
+SegmentGraph::build(void)
+{
+    // Reset all the local data structures
+    m_adj.clear();
+    m_vertexList.clear();
+    m_vertexMap.clear();
+    m_edgeMap.clear();
+    m_edgeList.clear();
+    m_inoutVertexList.clear();
+
+    // Add all edges from m_containedEdges
+    buildContainedEdgeList();
+
+    // Add all edges from m_inoutEdges
+    buildInOutEdgeList();
+
+    // Build m_edgeList into m_adj and m_vertexList
+    buildAdjacencyList();
 
     return;
 }
 
-void
-SegmentGraph::clear(void)
-{
-    m_adj.clear();
-    m_vertexList.clear();
-    m_vertexMap.clear();
-}
 
 /* private */
 uint32_t
@@ -107,6 +187,15 @@ SegmentGraph::mapVertex(const CoordinateXY& v)
     }
     m_vertexMap[v] = {id, count};
     return id;
+}
+
+
+/* private */
+bool
+SegmentGraph::isVertex(const CoordinateXY& v) const
+{
+    auto search = m_vertexMap.find(v);
+    return search != m_vertexMap.end();
 }
 
 
@@ -215,46 +304,66 @@ SegmentGraph::longestPath(std::vector<uint32_t>& ends)
 }
 
 
-std::unique_ptr<LineString>
-SegmentGraph::longestPath()
+
+std::unique_ptr<MultiLineString>
+SegmentGraph::longestPathSkeleton()
 {
     // Get fresh build of graph structures
-    clear();
     build();
 
+    // List of cardinality-1 vertices in the graph
     std::vector<uint32_t> graphEnds = endVertices();
+    // Longest pairwise path between those vertices
     std::vector<uint32_t> vertexPath = longestPath(graphEnds);
-
-    // Convert path of ids into geometric path
-    std::unique_ptr<CoordinateSequence> cs = std::make_unique<CoordinateSequence>();
-    for (auto vertexId : vertexPath) {
-        CoordinateXY c = m_vertexList[vertexId];
-        cs->add(c, false);
-    }
-    return m_inputSegments.getFactory()->createLineString(std::move(cs));
+    // Wrap LineString to output MultiLineString
+    std::vector<std::unique_ptr<LineString>> lines;
+    lines.emplace_back(pathToGeometry(vertexPath).release());
+    return m_factory->createMultiLineString(std::move(lines));
 }
 
 
 std::unique_ptr<MultiLineString>
-SegmentGraph::longestPaths()
+SegmentGraph::shortestPathSkeleton()
 {
     // Get fresh build of graph structures
-    clear();
     build();
 
-    std::vector<uint32_t> graphEnds = endVertices();
-    std::vector<uint32_t> vertexPath = longestPath(graphEnds);
+    // Get the longest path
+    std::vector<uint32_t> pathEnds = m_inoutVertexList;
+    std::vector<std::unique_ptr<LineString>> pathLineStrings;
+    while (!pathEnds.empty()) {
+        uint32_t start = pathEnds.back();
+        pathEnds.pop_back();
+        for (uint32_t end : pathEnds) {
+            // std::pair<std::vector<uint32_t>,double>
+            auto sp = shortestPath(start, end);
+            auto ls = pathToGeometry(sp.first);
+            pathLineStrings.emplace_back(ls.release());
+        }
+    }
 
-    // Convert path of ids into geometric path
-    std::unique_ptr<CoordinateSequence> cs = std::make_unique<CoordinateSequence>();
-    for (auto vertexId : vertexPath) {
-        CoordinateXY c = m_vertexList[vertexId];
+    LineMerger lm;
+    for (std::unique_ptr<LineString>& pls : pathLineStrings) {
+        lm.add(pls.get());
+    }
+
+    // std::vector<std::unique_ptr<geom::LineString>>
+    auto merged = lm.getMergedLineStrings();
+
+    return m_factory->createMultiLineString(std::move(merged));
+}
+
+
+std::unique_ptr<LineString>
+SegmentGraph::pathToGeometry(
+    std::vector<uint32_t>& vertexPath) const
+{
+    auto cs = std::make_unique<CoordinateSequence>();
+    for (uint32_t vertex : vertexPath) {
+        CoordinateXY c = m_vertexList[vertex];
         cs->add(c, false);
     }
-    auto path = m_inputSegments.getFactory()->createLineString(std::move(cs));
-    std::vector<std::unique_ptr<LineString>> lines;
-    lines.emplace_back(path.release());
-    return m_inputSegments.getFactory()->createMultiLineString(std::move(lines));
+    return m_factory->createLineString(std::move(cs));
 }
 
 

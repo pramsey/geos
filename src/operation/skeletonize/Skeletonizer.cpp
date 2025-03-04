@@ -31,6 +31,9 @@
 #include <geos/geom/util/Densifier.h>
 #include <geos/triangulate/VoronoiDiagramBuilder.h>
 #include <geos/util/GEOSException.h>
+#include <geos/operation/distance/IndexedFacetDistance.h>
+#include <geos/operation/distance/GeometryLocation.h>
+
 
 #include <cmath>
 
@@ -38,6 +41,8 @@
 using namespace geos::geom;
 using namespace geos::geom::prep;
 using geos::triangulate::VoronoiDiagramBuilder;
+using geos::operation::distance::IndexedFacetDistance;
+using geos::operation::distance::GeometryLocation;
 
 
 namespace geos {
@@ -70,6 +75,13 @@ Skeletonizer::skeletonize(const Polygon& poly)
     Skeletonizer skel(poly, nullptr);
     return skel.skeletonize();
 }
+
+/* private */
+bool
+Skeletonizer::hasInOutPoints() const
+{
+        return inputPoints && ! inputPoints->isEmpty();
+};
 
 
 void
@@ -118,6 +130,77 @@ Skeletonizer::calculateStatistics(
 }
 
 
+std::vector<const Geometry*>
+Skeletonizer::findContainedEdges(
+    const MultiLineString& allEdges) const
+{
+    PreparedPolygon preparedInput(&inputPolygon);
+
+    std::vector<const Geometry*> containedEdges;
+
+    struct EdgeFilter : public GeometryFilter {
+
+        PreparedPolygon& filterPoly;
+        std::vector<const Geometry*>& edges;
+
+        EdgeFilter(PreparedPolygon& fp, std::vector<const Geometry*>& e)
+            : filterPoly(fp)
+            , edges(e) {};
+
+        void filter_ro(const Geometry* geom) override {
+            if (filterPoly.contains(geom))
+                edges.push_back(geom);
+        }
+    };
+
+    EdgeFilter ef(preparedInput, containedEdges);
+    allEdges.apply_ro(&ef);
+    return containedEdges;
+}
+
+
+std::vector<GeometryLocation>
+Skeletonizer::findInputOutputEdges(
+    const MultiLineString& allEdges) const
+{
+    std::vector<GeometryLocation> inoutEdges;
+    if (!hasInOutPoints())
+        return inoutEdges;
+
+    //
+    // For each input/output point, find the voronoi edge
+    // it is closest to. This should be the edge that passes
+    // through the gapped points we set up during conditioning.
+    //
+    std::cout << "findInputOutputEdges " << std::endl;
+    std::cout << "  iterating on inputPoints" << std::endl;
+
+    //
+    // Index the edges to make the searching faster
+    //
+    IndexedFacetDistance ifd(&allEdges);
+
+    for (std::size_t i = 0; i < inputPoints->getNumGeometries(); i++) {
+        std::cout << "  i = " << i << std::endl;
+        const Point* pt = inputPoints->getGeometryN(i);
+        std::vector<GeometryLocation> locs = ifd.nearestLocations(pt);
+
+        std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
+        std::cout << "    locs[1] = " << locs[1].toString() << std::endl;
+
+        // Because we fed the IndexedFacetDistance a MultLinestring
+        // of two-point lines, the geometry component will just be the
+        // two-point line we are interested in.
+        const Geometry* geomComp = locs[0].getGeometryComponent();
+        const std::size_t segIndex = locs[0].getSegmentIndex();
+        CoordinateXY inoutCoord = pt->getCoordinatesRO()->getAt(0);
+        inoutEdges.emplace_back(geomComp, segIndex, inoutCoord);
+    }
+
+    return inoutEdges;
+}
+
+
 /* public */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize()
@@ -144,17 +227,20 @@ Skeletonizer::skeletonize()
         CoordinateConditioner::condition(
             inputPolygon, tolerance);
 
-    std::cout << "conditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
+    std::cout << "conditionedInputs" << std::endl << conditionedInput->toString() << std::endl << std::endl;
 
     //
     // If user has provided input/output points, we need to
-    // add gapped points at that location
+    // replace vertices with gapped points at those locations
     //
-    if (inputPoints != nullptr) {
+    if (hasInOutPoints()) {
         conditionedInput = InputOutputs::addInputOutputGaps(
             *conditionedInput,
             *inputPoints,
             tolerance);
+
+        std::cout << "inputPoints = " << inputPoints->getNumGeometries() << std::endl;
+        std::cout << "gappedInputs" << std::endl << conditionedInput->toString() << std::endl << std::endl;
     }
 
     //
@@ -163,12 +249,11 @@ Skeletonizer::skeletonize()
     // size. This makes the voronoi edges, particular the central
     // "skeletal" ones shorter and formed into nice curves more.
     //
-    std::unique_ptr<MultiLineString> densifiedOutput =
+    std::unique_ptr<MultiLineString> densifiedInput =
         CoordinateConditioner::densify(
             *conditionedInput, maxLen);
 
-    std::cout << "densifiedOutput" << std::endl << densifiedOutput->toString() << std::endl << std::endl;
-
+    std::cout << "densifiedInput" << std::endl << densifiedInput->toString() << std::endl << std::endl;
 
     //
     // This is a point voronoi, and the edges created
@@ -179,46 +264,36 @@ Skeletonizer::skeletonize()
     //
     VoronoiDiagramBuilder builder;
     //builder.setTolerance(tolerance);
-    builder.setSites(*densifiedOutput);
+    builder.setSites(*densifiedInput);
 
-    std::unique_ptr<MultiLineString> allEdges =
+    std::unique_ptr<MultiLineString> allVoronoiEdges =
         builder.getDiagramEdges(*inputFactory);
 
-    std::cout << "allEdges" << std::endl;
-    std::cout << *allEdges << std::endl << std::endl;
+    std::cout << "allVoronoiEdges" << std::endl;
+    std::cout << *allVoronoiEdges << std::endl << std::endl;
 
-    std::vector<const Geometry*> nonCrossingEdges;
-    PreparedPolygon preparedInput(&inputPolygon);
+    //
+    // The voronoi edges fully internal to the input polygon
+    // form the main body of the skeleton. From these edges
+    // we can form a graph and then work out shortest
+    // paths through the graph from input to output points
+    // and vice versa.
+    //
+    std::vector<const Geometry*> containedEdges = findContainedEdges(*allVoronoiEdges);
 
-    struct EdgeFilter : public GeometryFilter {
+    std::vector<GeometryLocation> inoutEdges = findInputOutputEdges(*allVoronoiEdges);
 
-        PreparedPolygon& filterPoly;
-        std::vector<const Geometry*>& edges;
-
-        EdgeFilter(PreparedPolygon& fp, std::vector<const Geometry*>& e)
-            : filterPoly(fp)
-            , edges(e) {};
-
-        void filter_ro(const Geometry* geom) override {
-            if (filterPoly.contains(geom))
-                edges.push_back(geom);
-        }
-    };
-
-    EdgeFilter ef(preparedInput, nonCrossingEdges);
-    allEdges->apply_ro(&ef);
-
-    auto edgesFiltered = inputFactory->createMultiLineString(nonCrossingEdges);
-    std::cout << "edgesFiltered" << std::endl;
+    auto edgesFiltered = inputFactory->createMultiLineString(containedEdges);
+    std::cout << "filteredVoronoiEdges" << std::endl;
     std::cout << *edgesFiltered << std::endl;
 
-    if (inputPoints && inputPoints->getNumGeometries() > 0)
-        std::cout << "inputPoints.getNumGeometries() > 0" << std::endl;
-
-    SegmentGraph sg(*edgesFiltered);
-    auto skeletonLine = sg.longestPaths();
-
-    return skeletonLine;
+    SegmentGraph sg(containedEdges, inoutEdges, inputFactory);
+    if (hasInOutPoints()) {
+        return sg.shortestPathSkeleton();
+    }
+    else {
+        return sg.longestPathSkeleton();
+    }
 }
 
 
