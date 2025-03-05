@@ -87,7 +87,7 @@ template<>
 void object::test<1> ()
 {
     auto poly = read_polygon("POLYGON ((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130))");
-    auto mpoint = read_mpoint("MULTIPOINT((450 80))");
+    auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
     auto output = Skeletonizer::skeletonize(*poly, *mpoint);
     std::cout << _w.write(*output) << std::endl;
 }

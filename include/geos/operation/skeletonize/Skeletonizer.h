@@ -70,6 +70,12 @@ public:
 
 private:
 
+    const geom::Polygon& inputPolygon;
+    const geom::MultiPoint* inputPoints = nullptr;
+    const geom::GeometryFactory* inputFactory;
+    // double inputWidth;
+    // double inputHeight;
+
     struct SegmentStatistics {
         double numSegments = 0.0;
         double averageLength = 0.0;
@@ -79,11 +85,6 @@ private:
         double width = 0.0;
         double height = 0.0;
     };
-
-    const geom::Polygon& inputPolygon;
-    const geom::MultiPoint* inputPoints = nullptr;
-    // double inputWidth;
-    // double inputHeight;
 
     void calculateStatistics(
         const CoordinateSequence* cs,
@@ -101,6 +102,11 @@ private:
     std::vector<GeometryLocation> findInputOutputEdges(
         const MultiLineString& allEdges) const;
 
+    std::unique_ptr<MultiLineString>
+        getGeometry(std::vector<GeometryLocation>& inoutEdges) const;
+
+    std::unique_ptr<MultiLineString>
+        getGeometry(std::vector<const Geometry*>& eedges) const;
 };
 
 

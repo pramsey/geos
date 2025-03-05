@@ -52,11 +52,13 @@ namespace skeletonize { // geos.operation.skeletonize
 Skeletonizer::Skeletonizer(const Polygon &poly, const MultiPoint* points)
         : inputPolygon(poly)
         , inputPoints(points)
+        , inputFactory(poly.getFactory())
         {};
 
 Skeletonizer::Skeletonizer(const Polygon &poly)
         : inputPolygon(poly)
         , inputPoints(nullptr)
+        , inputFactory(poly.getFactory())
         {};
 
 
@@ -201,12 +203,30 @@ Skeletonizer::findInputOutputEdges(
 }
 
 
+/* static */
+std::unique_ptr<MultiLineString>
+Skeletonizer::getGeometry(
+    std::vector<GeometryLocation>& inoutEdges) const
+{
+    std::vector<std::unique_ptr<Geometry>> edges;
+    for (const GeometryLocation& gl : inoutEdges) {
+        edges.emplace_back(gl.getGeometryComponent()->clone().release());
+    }
+    return inputFactory->createMultiLineString(std::move(edges));
+}
+
+std::unique_ptr<MultiLineString>
+Skeletonizer::getGeometry(
+    std::vector<const Geometry*>& edges) const
+{
+    return inputFactory->createMultiLineString(edges);
+}
+
+
 /* public */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize()
 {
-    const GeometryFactory* inputFactory = inputPolygon.getFactory();
-
     //
     // Figure out what we know about this geometry
     //
@@ -283,9 +303,10 @@ Skeletonizer::skeletonize()
 
     std::vector<GeometryLocation> inoutEdges = findInputOutputEdges(*allVoronoiEdges);
 
-    auto edgesFiltered = inputFactory->createMultiLineString(containedEdges);
     std::cout << "filteredVoronoiEdges" << std::endl;
-    std::cout << *edgesFiltered << std::endl;
+    std::cout << *(getGeometry(containedEdges)) << std::endl;
+    std::cout << "inoutVoronoiEdges" << std::endl;
+    std::cout << *(getGeometry(inoutEdges)) << std::endl;
 
     SegmentGraph sg(containedEdges, inoutEdges, inputFactory);
     if (hasInOutPoints()) {
