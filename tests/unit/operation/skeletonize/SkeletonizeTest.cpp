@@ -40,6 +40,7 @@ struct test_skeletonizetest_data {
 
     geos::io::WKTReader _r;
     geos::io::WKTWriter _w;
+    std::unique_ptr<MultiLineString> edgeVectorGeometry;
 
     test_skeletonizetest_data() {};
 
@@ -67,10 +68,10 @@ struct test_skeletonizetest_data {
     std::vector<const Geometry*>
     read_edge_vector(const std::string& wkt)
     {
-        auto mline = read_mline(wkt);
+        edgeVectorGeometry = read_mline(wkt);
         std::vector<const Geometry*> edges;
-        for (std::size_t i = 0; i < mline->getNumGeometries(); i++) {
-            edges.push_back(mline->getGeometryN(i));
+        for (std::size_t i = 0; i < edgeVectorGeometry->getNumGeometries(); i++) {
+            edges.push_back(edgeVectorGeometry->getGeometryN(i));
         }
         return edges;
     }

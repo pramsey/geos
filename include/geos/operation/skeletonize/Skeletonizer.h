@@ -60,21 +60,42 @@ public:
 
     static std::unique_ptr<MultiLineString> skeletonize(
         const Polygon &poly,
-        const MultiPoint &pts);
+        const MultiPoint &pts,
+        double tolerance = 0.0);
 
     static std::unique_ptr<MultiLineString> skeletonize(
-        const Polygon& poly);
+        const Polygon& poly,
+        double tolerance = 0.0);
 
     std::unique_ptr<MultiLineString> skeletonize();
 
+    std::unique_ptr<MultiLineString> skeletonize(
+        double tolerance,
+        double maxConditioningLength);
+
+    double getTolerance() const {
+        return m_tolerance;
+    }
+
+    void setTolerance(double new_tolerance) {
+        m_tolerance = new_tolerance;
+    }
+
+    double getConditioningLength() const {
+        return m_conditioningLength;
+    }
+
+    void setConditioningLength(double new_conditioningLength) {
+        m_conditioningLength = new_conditioningLength;
+    }
 
 private:
 
-    const geom::Polygon& inputPolygon;
-    const geom::MultiPoint* inputPoints = nullptr;
-    const geom::GeometryFactory* inputFactory;
-    // double inputWidth;
-    // double inputHeight;
+    const geom::Polygon& m_inputPolygon;
+    const geom::MultiPoint* m_inputPoints = nullptr;
+    const geom::GeometryFactory* m_inputFactory = nullptr;
+    double m_tolerance = 0.0;
+    double m_conditioningLength = 0.0;
 
     struct SegmentStatistics {
         double numSegments = 0.0;
@@ -84,15 +105,29 @@ private:
         double maxLength = 0.0;
         double width = 0.0;
         double height = 0.0;
+        double M2 = 0.0;
+        double maxX = 0.0;
+        double maxY = 0.0;
     };
 
     void calculateStatistics(
         const CoordinateSequence* cs,
         SegmentStatistics& stats) const;
 
-    void calculateStatistics(
-        const Polygon& poly,
+    void initializeStatistics(
         SegmentStatistics& stats) const;
+
+    SegmentStatistics calculateStatistics(
+        const Polygon& poly) const;
+
+    double defaultTolerance(
+        double coordinateMagnitude) const;
+
+    double defaultTolerance(
+        const SegmentStatistics& stats) const;
+
+    double defaultConditioningLength(
+        const SegmentStatistics& stats) const;
 
     bool hasInOutPoints() const;
 

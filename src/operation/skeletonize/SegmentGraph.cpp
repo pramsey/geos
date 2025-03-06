@@ -74,7 +74,7 @@ SegmentGraph::buildContainedEdgeList()
     // The containedEdges are the MultiLineString output
     // of VoronoiDiagramBuilder and are expected to all
     // be two-point LineStrings with shared end points.
-    for (const auto* geom : m_containedEdges) {
+    for (const Geometry* geom : m_containedEdges) {
 
         const LineString *ls = dynamic_cast<const LineString*>(geom);
         if(!ls)
@@ -328,7 +328,19 @@ SegmentGraph::shortestPathSkeleton()
     // Get fresh build of graph structures
     build();
 
-    // Get the longest path
+    // In case of a single in/out vertices we build the longest
+    // path that terminates at that point.
+    if (m_inoutVertexList.size() == 1) {
+        std::vector<uint32_t> vertexPath = longestPath(m_inoutVertexList);
+        auto ls = pathToGeometry(vertexPath);
+        std::vector<std::unique_ptr<LineString>> lines;
+        lines.emplace_back(ls.release());
+        return m_factory->createMultiLineString(std::move(lines));
+    }
+
+    // For each pairing of in/out vertices, generate
+    // the shortest path, and add that to our collection
+    // of paths
     std::vector<uint32_t> pathEnds = m_inoutVertexList;
     std::vector<std::unique_ptr<LineString>> pathLineStrings;
     while (!pathEnds.empty()) {
@@ -342,11 +354,11 @@ SegmentGraph::shortestPathSkeleton()
         }
     }
 
+    // Merge all paths we have discovered
     LineMerger lm;
     for (std::unique_ptr<LineString>& pls : pathLineStrings) {
         lm.add(pls.get());
     }
-
     // std::vector<std::unique_ptr<geom::LineString>>
     auto merged = lm.getMergedLineStrings();
 
