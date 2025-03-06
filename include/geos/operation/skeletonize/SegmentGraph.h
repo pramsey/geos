@@ -87,11 +87,11 @@ public:
 
     // Calculate all paths from start vertex and return
     // the one with the highest cost
-    std::vector<uint32_t> longestPath(uint32_t startVertex, std::vector<uint32_t>& ends);
+    std::pair<std::vector<uint32_t>, double> longestPath(uint32_t startVertex, std::vector<uint32_t>& ends);
 
     // Calculate the overall longest path between all
     // possible pairs of path ends
-    std::vector<uint32_t> longestPath(std::vector<uint32_t>& ends);
+    std::pair<std::vector<uint32_t>, double> longestPath(std::vector<uint32_t>& ends);
 
 private:
 

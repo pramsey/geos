@@ -269,7 +269,7 @@ SegmentGraph::shortestPath(uint32_t startVertex, uint32_t endVertex)
 }
 
 
-std::vector<uint32_t>
+std::pair<std::vector<uint32_t>, double>
 SegmentGraph::longestPath(uint32_t startVertex, std::vector<uint32_t>& ends)
 {
     double maxDist = 0.0;
@@ -284,23 +284,22 @@ SegmentGraph::longestPath(uint32_t startVertex, std::vector<uint32_t>& ends)
             maxPath = result.first;
         }
     }
-    return maxPath;
+    return {maxPath, maxDist};
 }
 
 
-std::vector<uint32_t>
+std::pair<std::vector<uint32_t>, double>
 SegmentGraph::longestPath(std::vector<uint32_t>& ends)
 {
     // Pick any vertex in the set of ends and use that
     // to calculate a temporary maximal route
     uint32_t aStart = ends[0];
-    std::vector<uint32_t> longishPath = longestPath(aStart, ends);
+    std::vector<uint32_t> longishPath = longestPath(aStart, ends).first;
     // Taking the other end of the maximal route, and finding
     // the longest route from there, gives us the
     // overall longest route for the set
     uint32_t longerStart = longishPath[longishPath.size()-1];
-    std::vector<uint32_t> longPath = longestPath(longerStart, ends);
-    return longPath;
+    return longestPath(longerStart, ends);
 }
 
 
@@ -314,7 +313,7 @@ SegmentGraph::longestPathSkeleton()
     // List of cardinality-1 vertices in the graph
     std::vector<uint32_t> graphEnds = endVertices();
     // Longest pairwise path between those vertices
-    std::vector<uint32_t> vertexPath = longestPath(graphEnds);
+    std::vector<uint32_t> vertexPath = longestPath(graphEnds).first;
     // Wrap LineString to output MultiLineString
     std::vector<std::unique_ptr<LineString>> lines;
     lines.emplace_back(pathToGeometry(vertexPath).release());
@@ -331,7 +330,7 @@ SegmentGraph::shortestPathSkeleton()
     // In case of a single in/out vertices we build the longest
     // path that terminates at that point.
     if (m_inoutVertexList.size() == 1) {
-        std::vector<uint32_t> vertexPath = longestPath(m_inoutVertexList);
+        std::vector<uint32_t> vertexPath = longestPath(m_inoutVertexList).first;
         auto ls = pathToGeometry(vertexPath);
         std::vector<std::unique_ptr<LineString>> lines;
         lines.emplace_back(ls.release());
