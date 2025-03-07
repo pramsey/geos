@@ -33,7 +33,7 @@
 #include <geos/util/GEOSException.h>
 #include <geos/operation/distance/IndexedFacetDistance.h>
 #include <geos/operation/distance/GeometryLocation.h>
-
+#include <geos/simplify/DouglasPeuckerSimplifier.h>
 
 #include <cmath>
 
@@ -43,6 +43,7 @@ using namespace geos::geom::prep;
 using geos::triangulate::VoronoiDiagramBuilder;
 using geos::operation::distance::IndexedFacetDistance;
 using geos::operation::distance::GeometryLocation;
+using geos::simplify::DouglasPeuckerSimplifier;
 
 
 namespace geos {
@@ -390,13 +391,17 @@ Skeletonizer::skeletonize()
     std::cout << "inoutVoronoiEdges" << std::endl;
     std::cout << *(getGeometry(inoutEdges)) << std::endl;
 
+    std::unique_ptr<MultiLineString> skel;
     SegmentGraph sg(containedEdges, inoutEdges, m_inputFactory);
     if (hasInOutPoints()) {
-        return sg.shortestPathSkeleton();
+        skel = sg.shortestPathSkeleton();
     }
     else {
-        return sg.longestPathSkeleton();
+        skel = sg.longestPathSkeleton();
     }
+    // return skel;
+    auto simpleSkel = DouglasPeuckerSimplifier::simplify(skel.get(), m_tolerance);
+    return std::unique_ptr<MultiLineString>(static_cast<MultiLineString*>(simpleSkel.release()));
 }
 
 

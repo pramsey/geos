@@ -155,6 +155,12 @@ private:
     std::unique_ptr<LineString> pathToGeometry(
         std::vector<uint32_t>& vertexPath) const;
 
+    std::unique_ptr<LineString> pathToGeometry(
+        uint32_t v0, uint32_t v1) const;
+
+    std::unique_ptr<MultiLineString> mergePairSet(
+        std::set<std::pair<uint32_t, uint32_t>>& pairs);
+
 };
 
 

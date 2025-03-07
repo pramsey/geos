@@ -121,9 +121,6 @@ private:
         const Polygon& poly) const;
 
     double defaultTolerance(
-        double coordinateMagnitude) const;
-
-    double defaultTolerance(
         const SegmentStatistics& stats) const;
 
     double defaultConditioningLength(

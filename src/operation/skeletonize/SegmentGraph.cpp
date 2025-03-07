@@ -224,6 +224,8 @@ SegmentGraph::shortestPath(uint32_t startVertex, uint32_t endVertex)
     std::vector<double> dist(m_vertexCount, UnknownDist);
     std::vector<uint32_t> parent(m_vertexCount, UnknownVertex); // To reconstruct path
 
+    // std::cout << "shortestPath(" <<  startVertex << "," << endVertex << ")" << std::endl;
+
     std::priority_queue<
         std::pair<double, uint32_t>,
         std::vector<std::pair<double, uint32_t>>,
@@ -322,6 +324,28 @@ SegmentGraph::longestPathSkeleton()
 
 
 std::unique_ptr<MultiLineString>
+SegmentGraph::mergePairSet(std::set<std::pair<uint32_t, uint32_t>>& pairs)
+{
+    std::cout << "mergePairSet pairs.size() = " << pairs.size() << std::endl;
+
+    // Merge all paths we have discovered
+    LineMerger lm;
+    std::vector<std::unique_ptr<LineString>> lines;
+    for (const std::pair<uint32_t, uint32_t>& p : pairs) {
+        auto ls = pathToGeometry(p.first, p.second);
+        lines.emplace_back(ls.release());
+    }
+
+    for (const auto& ls : lines) {
+        lm.add(ls.get());
+    }
+
+    auto merged = lm.getMergedLineStrings();
+    return m_factory->createMultiLineString(std::move(merged));
+}
+
+
+std::unique_ptr<MultiLineString>
 SegmentGraph::shortestPathSkeleton()
 {
     // Get fresh build of graph structures
@@ -330,38 +354,39 @@ SegmentGraph::shortestPathSkeleton()
     // In case of a single in/out vertices we build the longest
     // path that terminates at that point.
     if (m_inoutVertexList.size() == 1) {
-        std::vector<uint32_t> vertexPath = longestPath(m_inoutVertexList).first;
-        auto ls = pathToGeometry(vertexPath);
+        std::vector<uint32_t> graphEnds = endVertices();
+        uint32_t startVertex = m_inoutVertexList[0];
+        std::pair<std::vector<uint32_t>, double> vertexPath = longestPath(startVertex, graphEnds);
+        auto ls = pathToGeometry(vertexPath.first);
         std::vector<std::unique_ptr<LineString>> lines;
         lines.emplace_back(ls.release());
         return m_factory->createMultiLineString(std::move(lines));
     }
 
     // For each pairing of in/out vertices, generate
-    // the shortest path, and add that to our collection
-    // of paths
+    // the shortest path, and add that to our set
+    // of path pairs. We should end up with the unique
+    // set of segments (as defined by pairs)
+    // that form our skeleton.
     std::vector<uint32_t> pathEnds = m_inoutVertexList;
-    std::vector<std::unique_ptr<LineString>> pathLineStrings;
+    std::set<std::pair<uint32_t, uint32_t>> pathPairs;
     while (!pathEnds.empty()) {
         uint32_t start = pathEnds.back();
         pathEnds.pop_back();
         for (uint32_t end : pathEnds) {
             // std::pair<std::vector<uint32_t>,double>
-            auto sp = shortestPath(start, end);
-            auto ls = pathToGeometry(sp.first);
-            pathLineStrings.emplace_back(ls.release());
+            auto sp = shortestPath(start, end).first;
+            for (std::size_t i = 1; i < sp.size(); i++) {
+                uint32_t a = sp[i-1], b = sp[i], tmp;
+                if (a > b) {
+                    tmp = a; a = b; b = tmp;
+                }
+                pathPairs.emplace(a, b);
+            }
         }
     }
 
-    // Merge all paths we have discovered
-    LineMerger lm;
-    for (std::unique_ptr<LineString>& pls : pathLineStrings) {
-        lm.add(pls.get());
-    }
-    // std::vector<std::unique_ptr<geom::LineString>>
-    auto merged = lm.getMergedLineStrings();
-
-    return m_factory->createMultiLineString(std::move(merged));
+    return mergePairSet(pathPairs);
 }
 
 
@@ -374,6 +399,16 @@ SegmentGraph::pathToGeometry(
         CoordinateXY c = m_vertexList[vertex];
         cs->add(c, false);
     }
+    return m_factory->createLineString(std::move(cs));
+}
+
+std::unique_ptr<LineString>
+SegmentGraph::pathToGeometry(
+    uint32_t v0, uint32_t v1) const
+{
+    auto cs = std::make_unique<CoordinateSequence>();
+    cs->add(m_vertexList[v0], false);
+    cs->add(m_vertexList[v1], false);
     return m_factory->createLineString(std::move(cs));
 }
 
