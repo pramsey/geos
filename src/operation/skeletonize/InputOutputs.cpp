@@ -132,14 +132,14 @@ InputOutputs::findClosestLocations(
     // For each point of interest, find the nearest point on the
     // target LineString and store the GeometryLocation in the map<>.
     //
-    std::cout << "InputOutputs::process " << std::endl;
-    std::cout << " iterating on components of MultiPoint" << std::endl;
+    // std::cout << "InputOutputs::process " << std::endl;
+    // std::cout << " iterating on components of MultiPoint" << std::endl;
     for (std::size_t i = 0; i < pts.getNumGeometries(); i++) {
         const Point* pt = pts.getGeometryN(i);
         std::vector<GeometryLocation> locs = ifd.nearestLocations(pt);
-        std::cout << "  i = " << i << std::endl;
-        std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
-        std::cout << "    locs[1] = " << locs[1].toString() << std::endl;
+        // std::cout << "  i = " << i << std::endl;
+        // std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
+        // std::cout << "    locs[1] = " << locs[1].toString() << std::endl;
 
         // Add the found location to the map associated with the component it was found in
         GeometryLocation& gl = locs[0];
@@ -176,8 +176,8 @@ InputOutputs::process(
     // replace the targetted points with gapped points around the
     // input/output points.
     //
-    std::cout << std::endl;
-    std::cout << " iterating on components of MultiLineString" << std::endl;
+    // std::cout << std::endl;
+    // std::cout << " iterating on components of MultiLineString" << std::endl;
     std::vector<std::unique_ptr<LineString>> outputLines;
     for (std::size_t i = 0; i < mls.getNumGeometries(); i++) {
 
@@ -222,10 +222,10 @@ InputOutputs::process(
             newSeq->add(coords->getAt<CoordinateXY>(j), true);
         }
 
-        std::cout << "input coords" << std::endl;
-        std::cout << "LINESTRING" << *coords << std::endl;
-        std::cout << "gapped CoordinateSequence" << std::endl;
-        std::cout << "LINESTRING" << *newSeq << std::endl;
+        // std::cout << "input coords" << std::endl;
+        // std::cout << "LINESTRING" << *coords << std::endl;
+        // std::cout << "gapped CoordinateSequence" << std::endl;
+        // std::cout << "LINESTRING" << *newSeq << std::endl;
 
         auto newLs = mls.getFactory()->createLineString(std::move(newSeq));
         outputLines.emplace_back(newLs.release());

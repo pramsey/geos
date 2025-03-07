@@ -114,7 +114,7 @@ void object::test<3> ()
     auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))");
     auto mpoint = read_mpoint("MULTIPOINT ((200 200), (200 100))");
     auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    std::cout << _w.write(*output) << std::endl;
+    // std::cout << _w.write(*output) << std::endl;
     ensure("Skeleton Positive Length", output->getLength() > 100);
 }
 
@@ -136,7 +136,7 @@ void object::test<5> ()
     auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 150 200, 100 200, 100 100))");
     auto mpoint = read_mpoint("MULTIPOINT (100 100, 200 100, 155 200)");
     auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    std::cout << _w.write(*output) << std::endl;
+    // std::cout << _w.write(*output) << std::endl;
     ensure("Skeleton Positive Length", output->getLength() > 100);
 }
 
@@ -148,7 +148,7 @@ void object::test<11> ()
     auto poly = read_polygon("POLYGON ((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130))");
     auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
     auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    std::cout << _w.write(*output) << std::endl;
+    // std::cout << _w.write(*output) << std::endl;
 }
 
 
@@ -180,10 +180,6 @@ void object::test<15> ()
 {
     auto poly = read_polygon("POLYGON ((0 0, 100 0, 100 20, 0 20, 0 0))");
     auto pts = read_mpoint("MULTIPOINT (0 0, 100.0 20, 100 0, 0 20)");
-
-    // auto outputs = InputOutputs::addInputOutputGaps(
-    //     *mline, *pts, 1.0);
-
     auto output = Skeletonizer::skeletonize(*poly, *pts);
     // std::cout << std::endl << "Skeleton" << std::endl << output->toString() << std::endl;
 }

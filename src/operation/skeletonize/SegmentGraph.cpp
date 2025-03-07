@@ -326,7 +326,7 @@ SegmentGraph::longestPathSkeleton()
 std::unique_ptr<MultiLineString>
 SegmentGraph::mergePairSet(std::set<std::pair<uint32_t, uint32_t>>& pairs)
 {
-    std::cout << "mergePairSet pairs.size() = " << pairs.size() << std::endl;
+    // std::cout << "mergePairSet pairs.size() = " << pairs.size() << std::endl;
 
     // Merge all paths we have discovered
     LineMerger lm;

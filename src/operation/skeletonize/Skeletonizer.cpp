@@ -37,6 +37,7 @@
 
 #include <cmath>
 
+#undef DEBUG_OUTPUT
 
 using namespace geos::geom;
 using namespace geos::geom::prep;
@@ -234,22 +235,24 @@ Skeletonizer::findInputOutputEdges(
     // it is closest to. This should be the edge that passes
     // through the gapped points we set up during conditioning.
     //
+#ifdef DEBUG_OUTPUT
     std::cout << "findInputOutputEdges " << std::endl;
     std::cout << "  iterating on inputPoints" << std::endl;
-
+#endif
     //
     // Index the edges to make the searching faster
     //
     IndexedFacetDistance ifd(&allEdges);
 
     for (std::size_t i = 0; i < m_inputPoints->getNumGeometries(); i++) {
-        std::cout << "  i = " << i << std::endl;
         const Point* pt = m_inputPoints->getGeometryN(i);
         std::vector<GeometryLocation> locs = ifd.nearestLocations(pt);
 
+#ifdef DEBUG_OUTPUT
+        std::cout << "  i = " << i << std::endl;
         std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
         std::cout << "    locs[1] = " << locs[1].toString() << std::endl;
-
+#endif
         // Because we fed the IndexedFacetDistance a MultLinestring
         // of two-point lines, the geometry component will just be the
         // two-point line we are interested in.
@@ -315,10 +318,11 @@ Skeletonizer::skeletonize()
             m_conditioningLength = defaultConditioningLength(stats);
     }
 
+#ifdef DEBUG_OUTPUT
     std::cout << "m_tolerance = " << m_tolerance << std::endl;
     std::cout << "m_conditioningLength = " << m_conditioningLength << std::endl;
-
     std::cout << "inputPolygon" << std::endl << m_inputPolygon << std::endl << std::endl;
+#endif
 
     //
     // Condition the input vertices to make the subsequent
@@ -330,7 +334,9 @@ Skeletonizer::skeletonize()
         CoordinateConditioner::condition(
             m_inputPolygon, m_tolerance);
 
+#ifdef DEBUG_OUTPUT
     std::cout << "conditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
+#endif
 
     //
     // If user has provided input/output points, we need to
@@ -342,8 +348,10 @@ Skeletonizer::skeletonize()
             *m_inputPoints,
             m_tolerance);
 
+#ifdef DEBUG_OUTPUT
         std::cout << "m_inputPoints = " << m_inputPoints->getNumGeometries() << std::endl;
         std::cout << "gappedConditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
+#endif
     }
 
     //
@@ -356,7 +364,9 @@ Skeletonizer::skeletonize()
         CoordinateConditioner::densify(
             *conditionedInput, m_conditioningLength);
 
+#ifdef DEBUG_OUTPUT
     std::cout << "densifiedInput" << std::endl << densifiedInput->toString() << std::endl << std::endl;
+#endif
 
     //
     // This is a point voronoi, and the edges created
@@ -372,8 +382,10 @@ Skeletonizer::skeletonize()
     std::unique_ptr<MultiLineString> allVoronoiEdges =
         builder.getDiagramEdges(*m_inputFactory);
 
+#ifdef DEBUG_OUTPUT
     std::cout << "allVoronoiEdges" << std::endl;
     std::cout << *allVoronoiEdges << std::endl << std::endl;
+#endif
 
     //
     // The voronoi edges fully internal to the input polygon
@@ -386,10 +398,12 @@ Skeletonizer::skeletonize()
 
     std::vector<GeometryLocation> inoutEdges = findInputOutputEdges(*allVoronoiEdges);
 
+#ifdef DEBUG_OUTPUT
     std::cout << "filteredVoronoiEdges" << std::endl;
     std::cout << *(getGeometry(containedEdges)) << std::endl;
     std::cout << "inoutVoronoiEdges" << std::endl;
     std::cout << *(getGeometry(inoutEdges)) << std::endl;
+#endif
 
     std::unique_ptr<MultiLineString> skel;
     SegmentGraph sg(containedEdges, inoutEdges, m_inputFactory);
