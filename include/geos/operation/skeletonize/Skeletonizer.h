@@ -71,12 +71,12 @@ public:
 
     static std::unique_ptr<MultiLineString> skeletonize(
         const MultiPolygon& poly,
-        double tolerance);
+        double tolerance = 0.0);
 
     static std::unique_ptr<MultiLineString> skeletonize(
         const MultiPolygon& mpoly,
         const MultiPoint& mpoints,
-        double tolerance);
+        double tolerance = 0.0);
 
     std::vector<std::unique_ptr<LineString>> skeletonize();
 

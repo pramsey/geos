@@ -13,6 +13,7 @@
 #include <geos/geom/Geometry.h>
 #include <geos/geom/MultiLineString.h>
 #include <geos/geom/MultiPoint.h>
+#include <geos/geom/MultiPolygon.h>
 #include <geos/geom/Polygon.h>
 #include <geos/io/WKBReader.h>
 #include <geos/io/WKTReader.h>
@@ -28,10 +29,7 @@ namespace tut {
 // Test Group
 //
 
-using geos::geom::Geometry;
-using geos::geom::Polygon;
-using geos::geom::MultiLineString;
-using geos::geom::MultiPoint;
+using namespace geos::geom;
 using namespace geos::operation::skeletonize;
 using geos::operation::distance::GeometryLocation;
 
@@ -55,6 +53,13 @@ struct test_skeletonizetest_data {
     read_polygon(const std::string& wkt)
     {
         std::unique_ptr<Polygon> g = _r.read<Polygon>(wkt);
+        return g;
+    }
+
+    std::unique_ptr<MultiPolygon>
+    read_mpolygon(const std::string& wkt)
+    {
+        std::unique_ptr<MultiPolygon> g = _r.read<MultiPolygon>(wkt);
         return g;
     }
 
@@ -171,6 +176,16 @@ void object::test<12> ()
 
     auto result2 = sg.longestPath(endVertices);
     ensure_equals("longestPath.second", result2.second, 2.82843, 0.0001);
+}
+
+template<>
+template<>
+void object::test<13> ()
+{
+    auto poly = read_mpolygon("MULTIPOLYGON (((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130)))");
+    auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
+    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
+    // std::cout << _w.write(*output) << std::endl;
 }
 
 
