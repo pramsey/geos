@@ -28,6 +28,7 @@ class LinearRing;
 class LineString;
 class MultiLineString;
 class MultiPoint;
+class MultiPolygon;
 class Polygon;
 }
 namespace operation {
@@ -48,6 +49,7 @@ class GEOS_DLL Skeletonizer {
     using GeometryFactory = geos::geom::GeometryFactory;
     using MultiLineString = geos::geom::MultiLineString;
     using MultiPoint = geos::geom::MultiPoint;
+    using MultiPolygon = geos::geom::MultiPolygon;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
     using LineString = geos::geom::LineString;
@@ -67,9 +69,18 @@ public:
         const Polygon& poly,
         double tolerance = 0.0);
 
-    std::unique_ptr<MultiLineString> skeletonize();
+    static std::unique_ptr<MultiLineString> skeletonize(
+        const MultiPolygon& poly,
+        double tolerance);
 
-    std::unique_ptr<MultiLineString> skeletonize(
+    static std::unique_ptr<MultiLineString> skeletonize(
+        const MultiPolygon& mpoly,
+        const MultiPoint& mpoints,
+        double tolerance);
+
+    std::vector<std::unique_ptr<LineString>> skeletonize();
+
+    std::vector<std::unique_ptr<LineString>> skeletonize(
         double tolerance,
         double maxConditioningLength);
 

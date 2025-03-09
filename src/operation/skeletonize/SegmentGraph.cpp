@@ -306,7 +306,7 @@ SegmentGraph::longestPath(std::vector<uint32_t>& ends)
 
 
 
-std::unique_ptr<MultiLineString>
+std::vector<std::unique_ptr<LineString>>
 SegmentGraph::longestPathSkeleton()
 {
     // Get fresh build of graph structures
@@ -319,33 +319,13 @@ SegmentGraph::longestPathSkeleton()
     // Wrap LineString to output MultiLineString
     std::vector<std::unique_ptr<LineString>> lines;
     lines.emplace_back(pathToGeometry(vertexPath).release());
-    return m_factory->createMultiLineString(std::move(lines));
+    return lines;
 }
 
 
-std::unique_ptr<MultiLineString>
-SegmentGraph::mergePairSet(std::set<std::pair<uint32_t, uint32_t>>& pairs)
-{
-    // std::cout << "mergePairSet pairs.size() = " << pairs.size() << std::endl;
-
-    // Merge all paths we have discovered
-    LineMerger lm;
-    std::vector<std::unique_ptr<LineString>> lines;
-    for (const std::pair<uint32_t, uint32_t>& p : pairs) {
-        auto ls = pathToGeometry(p.first, p.second);
-        lines.emplace_back(ls.release());
-    }
-
-    for (const auto& ls : lines) {
-        lm.add(ls.get());
-    }
-
-    auto merged = lm.getMergedLineStrings();
-    return m_factory->createMultiLineString(std::move(merged));
-}
 
 
-std::unique_ptr<MultiLineString>
+std::vector<std::unique_ptr<LineString>>
 SegmentGraph::shortestPathSkeleton()
 {
     // Get fresh build of graph structures
@@ -360,7 +340,7 @@ SegmentGraph::shortestPathSkeleton()
         auto ls = pathToGeometry(vertexPath.first);
         std::vector<std::unique_ptr<LineString>> lines;
         lines.emplace_back(ls.release());
-        return m_factory->createMultiLineString(std::move(lines));
+        return lines;
     }
 
     // For each pairing of in/out vertices, generate
@@ -386,7 +366,7 @@ SegmentGraph::shortestPathSkeleton()
         }
     }
 
-    return mergePairSet(pathPairs);
+    return pairsToGeometry(pathPairs);
 }
 
 
@@ -410,6 +390,32 @@ SegmentGraph::pathToGeometry(
     cs->add(m_vertexList[v0], false);
     cs->add(m_vertexList[v1], false);
     return m_factory->createLineString(std::move(cs));
+}
+
+
+std::vector<std::unique_ptr<LineString>>
+SegmentGraph::pairsToGeometry(std::set<std::pair<uint32_t, uint32_t>>& pairs)
+{
+    // std::cout << "pairsToGeometry pairs.size() = " << pairs.size() << std::endl;
+
+    // Merge all paths we have discovered
+    LineMerger lm;
+    std::vector<std::unique_ptr<LineString>> lines;
+    // Convert vertex pairs into two-point segments
+    // Because the set has deduped them we should get
+    // a unique collection of segments
+    for (const std::pair<uint32_t, uint32_t>& p : pairs) {
+        auto ls = pathToGeometry(p.first, p.second);
+        lines.emplace_back(ls.release());
+    }
+
+    for (const auto& ls : lines) {
+        lm.add(ls.get());
+    }
+
+    // Stringing together noded collections of unique
+    // segments/lines is what LineMerger does best
+    return lm.getMergedLineStrings();
 }
 
 

@@ -72,11 +72,9 @@ public:
     void build();
 
     // Finds the longest pairwise path in the graph
-    std::unique_ptr<MultiLineString> longestPathSkeleton();
+    std::vector<std::unique_ptr<LineString>> longestPathSkeleton();
 
-    std::unique_ptr<MultiLineString> shortestPathSkeleton();
-
-
+    std::vector<std::unique_ptr<LineString>> shortestPathSkeleton();
 
     // Returns ordered vector of vertex numbers
     // of the shortest path between start and end vertices
@@ -158,7 +156,7 @@ private:
     std::unique_ptr<LineString> pathToGeometry(
         uint32_t v0, uint32_t v1) const;
 
-    std::unique_ptr<MultiLineString> mergePairSet(
+    std::vector<std::unique_ptr<LineString>> pairsToGeometry(
         std::set<std::pair<uint32_t, uint32_t>>& pairs);
 
 };

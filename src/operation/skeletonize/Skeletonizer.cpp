@@ -26,6 +26,7 @@
 #include <geos/geom/LineString.h>
 #include <geos/geom/MultiLineString.h>
 #include <geos/geom/MultiPoint.h>
+#include <geos/geom/MultiPolygon.h>
 #include <geos/geom/Polygon.h>
 #include <geos/geom/prep/PreparedPolygon.h>
 #include <geos/geom/util/Densifier.h>
@@ -72,22 +73,82 @@ Skeletonizer::Skeletonizer(const Polygon &poly)
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(
     const Polygon& poly,
-    const MultiPoint& points,
     double tolerance)
 {
-    Skeletonizer skel(poly, &points);
-    return skel.skeletonize(tolerance, 0.0);
+    Skeletonizer skel(poly, nullptr);
+    auto gf = poly.getFactory();
+    return gf->createMultiLineString(skel.skeletonize(tolerance, 0.0));
 }
+
+
+std::unique_ptr<MultiLineString>
+Skeletonizer::skeletonize(
+    const MultiPolygon& mpoly,
+    double tolerance)
+{
+    std::vector<std::unique_ptr<LineString>> lines;
+    for (std::size_t i = 0; i < mpoly.getNumGeometries(); i++) {
+        const Polygon* poly = mpoly.getGeometryN(i);
+        Skeletonizer skel(*poly, nullptr);
+        auto skelLines = skel.skeletonize(tolerance, 0.0);
+        for (auto& skln : skelLines) {
+            lines.emplace_back(skln.release());
+        }
+    }
+    auto gf = mpoly.getFactory();
+    return gf->createMultiLineString(std::move(lines));
+}
+
 
 /* public static */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(
     const Polygon& poly,
+    const MultiPoint& mpoints,
     double tolerance)
 {
-    Skeletonizer skel(poly, nullptr);
-    return skel.skeletonize(tolerance, 0.0);
+    Skeletonizer skel(poly, &mpoints);
+    auto skelLines = skel.skeletonize(tolerance, 0.0);
+    auto gf = poly.getFactory();
+    return gf->createMultiLineString(std::move(skelLines));
 }
+
+
+/* public static */
+std::unique_ptr<MultiLineString>
+Skeletonizer::skeletonize(
+    const MultiPolygon& mpoly,
+    const MultiPoint& mpoints,
+    double tolerance)
+{
+    auto gf = mpoly.getFactory();
+
+    std::vector<std::unique_ptr<LineString>> lines;
+    for (std::size_t i = 0; i < mpoly.getNumGeometries(); i++) {
+
+        std::vector<const Geometry*> pts;
+        const Polygon* poly = mpoly.getGeometryN(i);
+
+        IndexedFacetDistance ifd(poly);
+        for (std::size_t j = 0; j < mpoints.getNumGeometries(); j++) {
+            const Point* pt = mpoints.getGeometryN(j);
+            if (ifd.isWithinDistance(pt, tolerance)) {
+                pts.push_back(pt);
+            }
+        }
+
+        std::unique_ptr<MultiPoint> inoutPts = gf->createMultiPoint(pts);
+
+        Skeletonizer skel(*poly, inoutPts.get());
+        auto skelLines = skel.skeletonize(tolerance, 0.0);
+
+        for (auto& skln : skelLines) {
+            lines.emplace_back(skln.release());
+        }
+    }
+    return gf->createMultiLineString(std::move(lines));
+}
+
 
 /* private */
 bool
@@ -293,7 +354,7 @@ Skeletonizer::getGeometry(
 
 
 /* public */
-std::unique_ptr<MultiLineString>
+std::vector<std::unique_ptr<LineString>>
 Skeletonizer::skeletonize(double tolerance, double conditioningLength)
 {
     setTolerance(tolerance);
@@ -303,7 +364,7 @@ Skeletonizer::skeletonize(double tolerance, double conditioningLength)
 
 
 /* public */
-std::unique_ptr<MultiLineString>
+std::vector<std::unique_ptr<LineString>>
 Skeletonizer::skeletonize()
 {
     //
@@ -405,17 +466,14 @@ Skeletonizer::skeletonize()
     std::cout << *(getGeometry(inoutEdges)) << std::endl;
 #endif
 
-    std::unique_ptr<MultiLineString> skel;
     SegmentGraph sg(containedEdges, inoutEdges, m_inputFactory);
     if (hasInOutPoints()) {
-        skel = sg.shortestPathSkeleton();
+        return sg.shortestPathSkeleton();
     }
     else {
-        skel = sg.longestPathSkeleton();
+        return sg.longestPathSkeleton();
     }
-    // return skel;
-    auto simpleSkel = DouglasPeuckerSimplifier::simplify(skel.get(), m_tolerance);
-    return std::unique_ptr<MultiLineString>(static_cast<MultiLineString*>(simpleSkel.release()));
+
 }
 
 
