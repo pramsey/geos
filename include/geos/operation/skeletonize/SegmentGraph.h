@@ -42,7 +42,7 @@ namespace operation {   // geos.operation
 namespace skeletonize { // geos.operation.skeletonize
 
 // class GEOS_DLL SegmentGraph {
-class SegmentGraph {
+class GEOS_DLL SegmentGraph {
 
     using CoordinateXY = geos::geom::CoordinateXY;
     using Geometry = geos::geom::Geometry;

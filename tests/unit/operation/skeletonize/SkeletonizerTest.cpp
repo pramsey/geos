@@ -7,7 +7,6 @@
 // geos
 #include <geos/operation/skeletonize/Skeletonizer.h>
 #include <geos/operation/skeletonize/SegmentGraph.h>
-#include <geos/operation/skeletonize/InputOutputs.h>
 #include <geos/operation/distance/GeometryLocation.h>
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/Geometry.h>
