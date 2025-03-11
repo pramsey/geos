@@ -24,8 +24,10 @@
 #include <geos/geom/Polygon.h>
 
 #include <queue>
-#define _USE_MATH_DEFINES
-#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 using geos::algorithm::Angle;
 using geos::geom::CoordinateXY;
