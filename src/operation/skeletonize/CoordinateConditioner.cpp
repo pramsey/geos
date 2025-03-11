@@ -24,7 +24,7 @@
 #include <geos/geom/Polygon.h>
 
 #include <queue>
-
+#include <cmath>
 
 using geos::algorithm::Angle;
 using geos::geom::CoordinateXY;

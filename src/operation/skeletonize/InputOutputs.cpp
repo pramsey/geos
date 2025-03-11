@@ -173,7 +173,7 @@ InputOutputs::process(
 
     //
     // For each LineString in the input MultiLineString, iterate and
-    // replace the targetted points with gapped points around the
+    // replace the targeted points with gapped points around the
     // input/output points.
     //
     // std::cout << std::endl;
