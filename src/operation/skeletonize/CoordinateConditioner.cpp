@@ -253,7 +253,7 @@ CoordinateConditioner::pointAlong(
     return CoordinateXY(
         p0.x + segmentLengthFraction * (p1.x - p0.x),
         p0.y + segmentLengthFraction * (p1.y - p0.y));
-};
+}
 
 
 CoordinateXY
@@ -264,7 +264,7 @@ CoordinateConditioner::pointAlongDistance(
 {
     double fraction = distance / p0.distance(p1);
     return pointAlong(p0, p1, fraction);
-};
+}
 
 
 /* public static */
@@ -292,7 +292,7 @@ CoordinateConditioner::densifyMultiLineString(
         outputLines.emplace_back(ols.release());
     }
     return mls.getFactory()->createMultiLineString(std::move(outputLines));
-};
+}
 
 /* Private */
 std::unique_ptr<CoordinateSequence>
