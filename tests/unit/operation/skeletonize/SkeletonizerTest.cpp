@@ -34,13 +34,13 @@ using namespace geos::operation::skeletonize;
 using geos::operation::distance::GeometryLocation;
 
 // Common data used by tests
-struct test_skeletonizetest_data {
+struct test_skeletonizer_data {
 
     geos::io::WKTReader _r;
     geos::io::WKTWriter _w;
     std::unique_ptr<MultiLineString> edgeVectorGeometry;
 
-    test_skeletonizetest_data() {};
+    test_skeletonizer_data() {};
 
     std::unique_ptr<MultiPoint>
     read_mpoint(const std::string& wkt)
@@ -83,10 +83,10 @@ struct test_skeletonizetest_data {
 
 };
 
-typedef test_group<test_skeletonizetest_data> group;
+typedef test_group<test_skeletonizer_data> group;
 typedef group::object object;
 
-group test_skeletonizetest_group("geos::operation::skeletonize::skeletonize");
+group test_skeletonize_group("geos::operation::skeletonize::Skeletonizer");
 
 
 
