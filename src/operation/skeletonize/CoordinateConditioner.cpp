@@ -24,6 +24,7 @@
 #include <geos/geom/Polygon.h>
 
 #include <queue>
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 using geos::algorithm::Angle;
