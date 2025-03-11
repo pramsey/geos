@@ -58,7 +58,7 @@ Skeletonizer::Skeletonizer(const Polygon &poly, const MultiPoint* points)
         , m_inputFactory(poly.getFactory())
         , m_tolerance(0.0)
         , m_conditioningLength(0.0)
-        {};
+        {}
 
 Skeletonizer::Skeletonizer(const Polygon &poly)
         : m_inputPolygon(poly)
@@ -66,7 +66,7 @@ Skeletonizer::Skeletonizer(const Polygon &poly)
         , m_inputFactory(poly.getFactory())
         , m_tolerance(0.0)
         , m_conditioningLength(0.0)
-        {};
+        {}
 
 
 /* public static */
@@ -155,7 +155,7 @@ bool
 Skeletonizer::hasInOutPoints() const
 {
         return m_inputPoints && ! m_inputPoints->isEmpty();
-};
+}
 
 
 void
