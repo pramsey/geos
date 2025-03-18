@@ -1854,6 +1854,14 @@ extern GEOSGeometry GEOS_DLL *GEOSGeom_transformXYZ_r(
     GEOSTransformXYZCallback callback,
     void* userdata);
 
+/** \see GEOSSkeleton */
+extern GEOSGeometry GEOS_DLL *GEOSSkeleton_r(
+    GEOSContextHandle_t handle,
+    const GEOSGeometry* gpolys,
+    const GEOSGeometry* gpts,
+    double tolerance,
+    double conditioningLength);
+
 /** \see GEOSClusterDBSCAN */
 extern GEOSClusterInfo GEOS_DLL* GEOSClusterDBSCAN_r(
     GEOSContextHandle_t handle,
@@ -4925,6 +4933,47 @@ extern GEOSGeometry GEOS_DLL *GEOSGeom_transformXYZ(
     const GEOSGeometry* g,
     GEOSTransformXYZCallback callback,
     void* userdata);
+
+/**
+* Build a linear "skeleton" for input polygons. Each polygon in the
+* input is skeletonized separately. The skeleton is built by creating
+* a voronoi with the points of the polygon. This generates an internal
+* structure that is mid-line relative to the polygon boundaries. Finding
+* shortest paths through the internal structure generates skeleton
+* shapes.
+*
+* The optional "points" parameter allows the user to choose points on the
+* polygon boundary that will be connected up by the skeleton output.
+* A common use case is for linearizing lakes in a hydrological network,
+* the stream input/output points are used to ensure that the generated
+* skeleton hooks up to the linear hydrology.
+*
+* The tolerance and conditioning length are optional parameters that
+* control how the polygon is preconditioned before the voronoi is generated.
+* The tolerance should be small enough to wipe out any data errors or
+* redundant vertices. The conditioning length determines the extent
+* to which long straight edges are divided up, to ensure the interior
+* structure of the skeleton is sufficiently detailed.
+*
+* \param[in] gpolys Input polygonal geometry
+* \param[in] gpts Input multipoint where the points are on the boundary
+*                 of the polygonal input.
+* \param[in] tolerance Smallest size of "interesting" geometry. It is
+*                      good for this to reflect the true accuracy of the
+*                      data, rather than an arbitrary precision.
+* \param[in] conditioningLength Size of edges to create when dividing
+*                      up long segments.
+* \return A multilinestring containing all the edges of the skeleton(s)
+*         of the polygonal inputs.
+* Caller takes ownership of return, free with GEOSGeom_destroy().
+*
+* \since 3.14
+*/
+extern GEOSGeometry GEOS_DLL *GEOSSkeleton(
+    const GEOSGeometry* gpolys,
+    const GEOSGeometry* gpts,
+    double tolerance,
+    double conditioningLength);
 
 /**
 * Snaps the vertices and segments of the first geometry to vertices of the
