@@ -725,6 +725,12 @@ extern "C" {
         return GEOSGeom_transformXYZ_r(handle, g, callback, userdata);
     }
 
+    Geometry*
+    GEOSSkeleton(const Geometry* gpolys, const Geometry* gpts, double tolerance, double conditioningLength)
+    {
+        return GEOSSkeleton_r(handle, gpolys, gpts, tolerance, conditioningLength);
+    }
+
 
 //-------------------------------------------------------------------
 // memory management functions

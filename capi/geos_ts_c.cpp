@@ -92,6 +92,7 @@
 #include <geos/operation/polygonize/BuildArea.h>
 #include <geos/operation/relate/RelateOp.h>
 #include <geos/operation/sharedpaths/SharedPathsOp.h>
+#include <geos/operation/skeletonize/Skeletonizer.h>
 #include <geos/operation/union/CascadedPolygonUnion.h>
 #include <geos/operation/union/DisjointSubsetUnion.h>
 #include <geos/operation/valid/IsValidOp.h>
@@ -1779,6 +1780,31 @@ extern "C" {
             ret->apply_rw(&filter);
             ret->geometryChanged();
             return ret.release();
+        });
+    }
+
+
+    Geometry*
+    GEOSSkeleton_r(GEOSContextHandle_t handle,
+        const Geometry* gpolys, const Geometry* gpts,
+        double tolerance, double conditioningLength)
+    {
+        return execute(handle, [&]() {
+            std::unique_ptr<geos::geom::MultiLineString> rslt;
+            if (gpts) {
+                const geos::geom::MultiPoint *mpts = dynamic_cast<const geos::geom::MultiPoint *>(gpts);
+                if (!mpts) {
+                    throw std::runtime_error(std::string("MultiPoint parameter is not a MultiPoint"));
+                }
+                rslt = geos::operation::skeletonize::Skeletonizer::skeletonize(
+                    *gpolys, *mpts, tolerance, conditioningLength);
+            }
+            else {
+                rslt = geos::operation::skeletonize::Skeletonizer::skeletonize(
+                    *gpolys, tolerance, conditioningLength);
+            }
+            rslt->setSRID(gpolys->getSRID());
+            return rslt.release();
         });
     }
 

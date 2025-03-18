@@ -287,8 +287,8 @@ CoordinateConditioner::densifyMultiLineString(
     double maxLen) const
 {
     std::vector<std::unique_ptr<LineString>> outputLines;
-    for (std::size_t i = 0; i < mls.getNumGeometries(); i++) {
-        const LineString* ls = mls.getGeometryN(i);
+    for (const auto& lsp : mls) {
+        auto ls = static_cast<const LineString*>(lsp.get());
         const CoordinateSequence* coords = ls->getCoordinatesRO();
         std::unique_ptr<CoordinateSequence> densified = densifyCoordinateSequence(coords, maxLen);
         std::unique_ptr<LineString> ols = mls.getFactory()->createLineString(std::move(densified));
