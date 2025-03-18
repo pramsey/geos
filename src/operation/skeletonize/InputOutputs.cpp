@@ -51,7 +51,7 @@ namespace skeletonize { // geos.operation.skeletonize
 std::unique_ptr<MultiLineString>
 InputOutputs::addInputOutputGaps(
     const MultiLineString& mls,
-    const MultiPoint& pts,
+    const std::vector<const Point*>& pts,
     double tolerance)
 {
     InputOutputs iop;
@@ -123,7 +123,7 @@ InputOutputs::addGappedPair(
 InputOutputMap
 InputOutputs::findClosestLocations(
     const MultiLineString& mls,
-    const MultiPoint& pts) const
+    const std::vector<const Point*>& pts) const
 {
     IndexedFacetDistance ifd(&mls);
     InputOutputMap ioMap;
@@ -134,8 +134,7 @@ InputOutputs::findClosestLocations(
     //
     // std::cout << "InputOutputs::process " << std::endl;
     // std::cout << " iterating on components of MultiPoint" << std::endl;
-    for (std::size_t i = 0; i < pts.getNumGeometries(); i++) {
-        const Point* pt = pts.getGeometryN(i);
+    for (const Point* pt : pts) {
         std::vector<GeometryLocation> locs = ifd.nearestLocations(pt);
         // std::cout << "  i = " << i << std::endl;
         // std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
@@ -145,7 +144,8 @@ InputOutputs::findClosestLocations(
         GeometryLocation& gl = locs[0];
         std::size_t ptIndex = coordIndex(gl);
         const Geometry* geomComp = gl.getGeometryComponent();
-        auto ptCoord = pt->getCoordinatesRO()->getAt<CoordinateXY>(0);
+        const CoordinateSequence* cs = pt->getCoordinatesRO();
+        auto ptCoord = cs->getAt<CoordinateXY>(0);
         ioMap[geomComp].emplace_back(geomComp, ptIndex, ptCoord);
     }
 
@@ -157,7 +157,7 @@ InputOutputs::findClosestLocations(
 std::unique_ptr<MultiLineString>
 InputOutputs::process(
     const MultiLineString& mls,
-    const MultiPoint& pts,
+    const std::vector<const Point*>& pts,
     double tolerance) const
 {
     (void)tolerance; // xxxxxx
@@ -179,9 +179,9 @@ InputOutputs::process(
     // std::cout << std::endl;
     // std::cout << " iterating on components of MultiLineString" << std::endl;
     std::vector<std::unique_ptr<LineString>> outputLines;
-    for (std::size_t i = 0; i < mls.getNumGeometries(); i++) {
+    for (const auto& lsp : mls) {
 
-        const LineString* ls = mls.getGeometryN(i);
+        const LineString* ls = static_cast<const LineString*>(lsp.get());
         const CoordinateSequence* coords = ls->getCoordinatesRO();
 
         //

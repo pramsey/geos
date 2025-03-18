@@ -323,8 +323,6 @@ SegmentGraph::longestPathSkeleton()
 }
 
 
-
-
 std::vector<std::unique_ptr<LineString>>
 SegmentGraph::shortestPathSkeleton()
 {

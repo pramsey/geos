@@ -28,6 +28,7 @@ class CoordinateSequence;
 class LineString;
 class MultiLineString;
 class MultiPoint;
+class Point;
 }
 namespace operation {
 namespace distance {
@@ -50,6 +51,7 @@ class InputOutputs {
     using LineString = geos::geom::LineString;
     using MultiLineString = geos::geom::MultiLineString;
     using MultiPoint = geos::geom::MultiPoint;
+    using Point = geos::geom::Point;
     using GeometryLocation = geos::operation::distance::GeometryLocation;
 
 public:
@@ -58,7 +60,7 @@ public:
 
     static std::unique_ptr<MultiLineString> addInputOutputGaps(
         const MultiLineString& mls,
-        const MultiPoint& pts,
+        const std::vector<const Point*>& pts,
         double tolerance);
 
 
@@ -66,7 +68,7 @@ private:
 
     std::unique_ptr<MultiLineString> process(
         const MultiLineString& mls,
-        const MultiPoint& pts,
+        const std::vector<const Point*>& pts,
         double tolerance) const;
 
     std::size_t coordIndex(
@@ -82,7 +84,7 @@ private:
 
     InputOutputMap findClosestLocations(
         const MultiLineString& mls,
-        const MultiPoint& pts) const;
+        const std::vector<const Point*>& pts) const;
 };
 
 

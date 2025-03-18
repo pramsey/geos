@@ -31,6 +31,7 @@ class MultiLineString;
 class MultiPoint;
 class MultiPolygon;
 class Polygon;
+class Point;
 }
 namespace operation {
 namespace distance {
@@ -51,6 +52,7 @@ class GEOS_DLL Skeletonizer {
     using MultiLineString = geos::geom::MultiLineString;
     using MultiPoint = geos::geom::MultiPoint;
     using MultiPolygon = geos::geom::MultiPolygon;
+    using Point = geos::geom::Point;
     using Polygon = geos::geom::Polygon;
     using LinearRing = geos::geom::LinearRing;
     using LineString = geos::geom::LineString;
@@ -58,32 +60,20 @@ class GEOS_DLL Skeletonizer {
 
 public:
 
-    Skeletonizer(const Polygon &poly, const MultiPoint *pts);
-    Skeletonizer(const Polygon &poly);
+    Skeletonizer(const Geometry &poly, const MultiPoint *pts);
+    Skeletonizer(const Geometry &poly);
 
     static std::unique_ptr<MultiLineString> skeletonize(
-        const Polygon &poly,
+        const Geometry &polys,
         const MultiPoint &pts,
-        double tolerance = 0.0);
+        double tolerance = 0.0,
+        double conditioningLength = 0.0);
 
     static std::unique_ptr<MultiLineString> skeletonize(
-        const Polygon& poly,
-        double tolerance = 0.0);
+        const Geometry& polys,
+        double tolerance = 0.0,
+        double conditioningLength = 0.0);
 
-    static std::unique_ptr<MultiLineString> skeletonize(
-        const MultiPolygon& poly,
-        double tolerance = 0.0);
-
-    static std::unique_ptr<MultiLineString> skeletonize(
-        const MultiPolygon& mpoly,
-        const MultiPoint& mpoints,
-        double tolerance = 0.0);
-
-    std::vector<std::unique_ptr<LineString>> skeletonize();
-
-    std::vector<std::unique_ptr<LineString>> skeletonize(
-        double tolerance,
-        double maxConditioningLength);
 
     double getTolerance() const {
         return m_tolerance;
@@ -103,7 +93,7 @@ public:
 
 private:
 
-    const geom::Polygon& m_inputPolygon;
+    const geom::Geometry& m_inputGeometry;
     const geom::MultiPoint* m_inputPoints = nullptr;
     const geom::GeometryFactory* m_inputFactory = nullptr;
     double m_tolerance = 0.0;
@@ -138,19 +128,25 @@ private:
     double defaultConditioningLength(
         const SegmentStatistics& stats) const;
 
-    bool hasInOutPoints() const;
-
     std::vector<const Geometry*> findContainedEdges(
         const MultiLineString& allEdges) const;
 
     std::vector<GeometryLocation> findInputOutputEdges(
-        const MultiLineString& allEdges) const;
+        const MultiLineString& allEdges,
+        const std::vector<const Point*>& points) const;
 
     std::unique_ptr<MultiLineString>
         getGeometry(std::vector<GeometryLocation>& inoutEdges) const;
 
     std::unique_ptr<MultiLineString>
-        getGeometry(std::vector<const Geometry*>& eedges) const;
+        getGeometry(std::vector<const Geometry*>& edges) const;
+
+    void skeletonizePolygon(
+        const Polygon* poly,
+        const std::vector<const Point*>& points,
+        std::vector<std::unique_ptr<LineString>>& skelLines);
+
+    std::unique_ptr<MultiLineString> skeletonize();
 };
 
 
