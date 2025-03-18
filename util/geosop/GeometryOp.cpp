@@ -58,6 +58,7 @@
 #include <geos/operation/overlayng/CoverageUnion.h>
 #include <geos/operation/overlayng/UnaryUnionNG.h>
 #include <geos/operation/relate/RelateOp.h>
+#include <geos/operation/skeletonize/Skeletonizer.h>
 #include <geos/operation/union/CoverageUnion.h>
 #include <geos/precision/GeometryPrecisionReducer.h>
 #include <geos/simplify/DouglasPeuckerSimplifier.h>
@@ -584,6 +585,15 @@ std::vector<GeometryOpCreator> opRegistry {
         return new Result( geos::simplify::TopologyPreservingSimplifier::simplify(&geom, d) );
         });
 }},
+{"skeletonize", [](std::string name) { return GeometryOp::create(name,
+    catOverlay,
+    "compute skeleton of polygon A without using input/output points",
+    [](const Geometry& geomA) {
+        auto r = geos::operation::skeletonize::Skeletonizer::skeletonize(geomA);
+        return new Result( std::move(r) );
+    });
+}},
+
 //=============  category: Distance  ==================
 
 {"distance", [](std::string name) { return GeometryOp::create(name,
