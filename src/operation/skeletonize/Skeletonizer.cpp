@@ -53,18 +53,18 @@ namespace geos {
 namespace operation {   // geos.operation
 namespace skeletonize { // geos.operation.skeletonize
 
-Skeletonizer::Skeletonizer(const Geometry &poly, const MultiPoint* points)
+Skeletonizer::Skeletonizer(const Geometry* poly, const MultiPoint* points)
         : m_inputGeometry(poly)
         , m_inputPoints(points)
-        , m_inputFactory(poly.getFactory())
+        , m_inputFactory(poly->getFactory())
         , m_tolerance(0.0)
         , m_conditioningLength(0.0)
         {}
 
-Skeletonizer::Skeletonizer(const Geometry &poly)
+Skeletonizer::Skeletonizer(const Geometry *poly)
         : m_inputGeometry(poly)
         , m_inputPoints(nullptr)
-        , m_inputFactory(poly.getFactory())
+        , m_inputFactory(poly->getFactory())
         , m_tolerance(0.0)
         , m_conditioningLength(0.0)
         {}
@@ -73,12 +73,12 @@ Skeletonizer::Skeletonizer(const Geometry &poly)
 /* public static */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(
-    const Geometry& poly,
-    const MultiPoint& mpoints,
+    const Geometry* poly,
+    const MultiPoint* mpoints,
     double tolerance,
     double conditioningLength)
 {
-    Skeletonizer skel(poly, &mpoints);
+    Skeletonizer skel(poly, mpoints);
     skel.setTolerance(tolerance);
     skel.setConditioningLength(conditioningLength);
     return skel.skeletonize();
@@ -88,7 +88,7 @@ Skeletonizer::skeletonize(
 /* public static */
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(
-    const Geometry& poly,
+    const Geometry* poly,
     double tolerance,
     double conditioningLength)
 {
@@ -193,7 +193,7 @@ std::vector<const Geometry*>
 Skeletonizer::findContainedEdges(
     const MultiLineString& allEdges) const
 {
-    PreparedPolygon preparedInput(&m_inputGeometry);
+    PreparedPolygon preparedInput(m_inputGeometry);
 
     std::vector<const Geometry*> containedEdges;
 
@@ -302,7 +302,7 @@ Skeletonizer::skeletonize()
 {
     std::vector<const Polygon*> polys;
     PolygonExtracter pe(polys);
-    m_inputGeometry.apply_ro(&pe);
+    m_inputGeometry->apply_ro(&pe);
 
     if (polys.empty()) {
         throw geos::util::GEOSException("No polygons in input geometry");

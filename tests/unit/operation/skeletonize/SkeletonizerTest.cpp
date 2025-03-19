@@ -80,6 +80,22 @@ struct test_skeletonizer_data {
         return edges;
     }
 
+    void testNoOp(const std::string& polyWkt, const std::string& ptsWkt)
+    {
+        auto poly = read_polygon(polyWkt);
+        auto mpoint = read_mpoint(ptsWkt);
+        auto output = Skeletonizer::skeletonize(poly.get(), mpoint.get());
+        ensure("Skeleton Positive Length", output->getLength() > 100);
+    }
+
+    void testNoOpMulti(const std::string& polyWkt, const std::string& ptsWkt)
+    {
+        auto poly = read_mpolygon(polyWkt);
+        auto mpoint = read_mpoint(ptsWkt);
+        auto output = Skeletonizer::skeletonize(poly.get(), mpoint.get());
+        ensure("Skeleton Positive Length", output->getLength() > 100);
+    }
+
 };
 
 typedef test_group<test_skeletonizer_data> group;
@@ -93,10 +109,9 @@ template<>
 template<>
 void object::test<1> ()
 {
-    auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))");
-    auto mpoint = read_mpoint("MULTIPOINT EMPTY");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    ensure("Skeleton Positive Length", output->getLength() > 100);
+    testNoOp(
+        "POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))",
+        "MULTIPOINT EMPTY");
 }
 
 
@@ -104,44 +119,36 @@ template<>
 template<>
 void object::test<2> ()
 {
-    auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))");
-    auto mpoint = read_mpoint("MULTIPOINT ((200 200))");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
-    ensure("Skeleton Positive Length", output->getLength() > 100);
+    testNoOp(
+        "POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))",
+        "MULTIPOINT ((200 200))");
 }
 
 template<>
 template<>
 void object::test<3> ()
 {
-    auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))");
-    auto mpoint = read_mpoint("MULTIPOINT ((200 200), (200 100))");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
-    ensure("Skeleton Positive Length", output->getLength() > 100);
+    testNoOp(
+        "POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))",
+        "MULTIPOINT ((200 200), (200 100))");
 }
 
 template<>
 template<>
 void object::test<4> ()
 {
-    auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))");
-    auto mpoint = read_mpoint("MULTIPOINT (100 100, 200 100, 200 200, 100 200)");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
-    ensure("Skeleton Positive Length", output->getLength() > 200);
+    testNoOp(
+        "POLYGON ((100 100, 200 100, 200 200, 100 200, 100 100))",
+        "MULTIPOINT (100 100, 200 100, 200 200, 100 200)");
 }
 
 template<>
 template<>
 void object::test<5> ()
 {
-    auto poly = read_polygon("POLYGON ((100 100, 200 100, 200 200, 150 200, 100 200, 100 100))");
-    auto mpoint = read_mpoint("MULTIPOINT (100 100, 200 100, 155 200)");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
-    ensure("Skeleton Positive Length", output->getLength() > 100);
+    testNoOp(
+        "POLYGON ((100 100, 200 100, 200 200, 150 200, 100 200, 100 100))",
+        "MULTIPOINT (100 100, 200 100, 155 200)");
 }
 
 
@@ -151,7 +158,7 @@ void object::test<11> ()
 {
     auto poly = read_polygon("POLYGON ((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130))");
     auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
+    auto output = Skeletonizer::skeletonize(poly.get(), mpoint.get());
     // std::cout << _w.write(*output) << std::endl;
 }
 
@@ -181,10 +188,10 @@ template<>
 template<>
 void object::test<13> ()
 {
-    auto poly = read_mpolygon("MULTIPOLYGON (((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130)))");
-    auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
+    testNoOpMulti(
+        "MULTIPOLYGON (((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130)))",
+        "MULTIPOINT ((450 80),(160 180), (100 130))"
+        );
 }
 
 
@@ -192,10 +199,10 @@ template<>
 template<>
 void object::test<14> ()
 {
-    auto poly = read_mpolygon("MULTIPOLYGON (((50 50,50 80, 80 80, 80 50, 50 50)), ((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130)))");
-    auto mpoint = read_mpoint("MULTIPOINT((450 80),(160 180), (100 130))");
-    auto output = Skeletonizer::skeletonize(*poly, *mpoint);
-    // std::cout << _w.write(*output) << std::endl;
+    testNoOpMulti(
+        "MULTIPOLYGON (((50 50,50 80, 80 80, 80 50, 50 50)), ((100 130, 120 160, 160 180, 270 180, 330 180, 420 170, 430 120, 450 80, 430 50, 350 50, 260 30, 170 30, 130 30, 90 80, 100 130)))",
+        "MULTIPOINT ((450 80),(160 180), (100 130))"
+        );
 }
 
 
@@ -203,10 +210,10 @@ template<>
 template<>
 void object::test<15> ()
 {
-    auto poly = read_polygon("POLYGON ((0 0, 100 0, 100 20, 0 20, 0 0))");
-    auto pts = read_mpoint("MULTIPOINT (0 0, 100.0 20, 100 0, 0 20)");
-    auto output = Skeletonizer::skeletonize(*poly, *pts);
-    // std::cout << std::endl << "Skeleton" << std::endl << output->toString() << std::endl;
+    testNoOp(
+        "POLYGON ((0 0, 100 0, 100 20, 0 20, 0 0))",
+        "MULTIPOINT (0 0, 100.0 20, 100 0, 0 20)"
+        );
 }
 
 

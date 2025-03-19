@@ -589,7 +589,7 @@ std::vector<GeometryOpCreator> opRegistry {
     catOverlay,
     "compute skeleton of polygon A without using input/output points",
     [](const Geometry& geomA) {
-        auto r = geos::operation::skeletonize::Skeletonizer::skeletonize(geomA);
+        auto r = geos::operation::skeletonize::Skeletonizer::skeletonize(&geomA);
         return new Result( std::move(r) );
     });
 }},

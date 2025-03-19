@@ -1799,11 +1799,11 @@ extern "C" {
                     throw std::runtime_error(std::string("MultiPoint parameter is not a MultiPoint"));
                 }
                 rslt = geos::operation::skeletonize::Skeletonizer::skeletonize(
-                    *gpolys, *mpts, tolerance, conditioningLength);
+                    gpolys, mpts, tolerance, conditioningLength);
             }
             else {
                 rslt = geos::operation::skeletonize::Skeletonizer::skeletonize(
-                    *gpolys, tolerance, conditioningLength);
+                    gpolys, tolerance, conditioningLength);
             }
             rslt->setSRID(gpolys->getSRID());
             return rslt.release();

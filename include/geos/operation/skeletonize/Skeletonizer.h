@@ -60,17 +60,17 @@ class GEOS_DLL Skeletonizer {
 
 public:
 
-    Skeletonizer(const Geometry &poly, const MultiPoint *pts);
-    Skeletonizer(const Geometry &poly);
+    Skeletonizer(const Geometry* poly, const MultiPoint* pts);
+    Skeletonizer(const Geometry* poly);
 
     static std::unique_ptr<MultiLineString> skeletonize(
-        const Geometry &polys,
-        const MultiPoint &pts,
+        const Geometry* polys,
+        const MultiPoint* pts,
         double tolerance = 0.0,
         double conditioningLength = 0.0);
 
     static std::unique_ptr<MultiLineString> skeletonize(
-        const Geometry& polys,
+        const Geometry* polys,
         double tolerance = 0.0,
         double conditioningLength = 0.0);
 
@@ -93,7 +93,7 @@ public:
 
 private:
 
-    const geom::Geometry& m_inputGeometry;
+    const geom::Geometry* m_inputGeometry;
     const geom::MultiPoint* m_inputPoints = nullptr;
     const geom::GeometryFactory* m_inputFactory = nullptr;
     double m_tolerance = 0.0;
