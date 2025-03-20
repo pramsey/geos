@@ -106,8 +106,8 @@ Skeletonizer::initializeStatistics(
     SegmentStatistics& stats) const
 {
     stats.numSegments = 0;
-    stats.maxLength = std::numeric_limits<double>::max();
-    stats.minLength = std::numeric_limits<double>::min();
+    stats.maxLength = std::numeric_limits<double>::min();
+    stats.minLength = std::numeric_limits<double>::max();
     stats.averageLength = 0.0;
     stats.M2 = 0.0;
     stats.stdevLength = 0.0;
@@ -158,7 +158,7 @@ Skeletonizer::calculateStatistics(
     }
     stats.height = poly.getEnvelopeInternal()->getHeight();
     stats.width = poly.getEnvelopeInternal()->getWidth();
-    stats.stdevLength = std::sqrt(stats.M2/(stats.averageLength-1));
+    stats.stdevLength = std::sqrt(stats.M2/stats.numSegments);
     return stats;
 }
 
@@ -181,7 +181,7 @@ double
 Skeletonizer::defaultConditioningLength(
     const SegmentStatistics& stats) const
 {
-    return std::fabs(stats.averageLength - stats.stdevLength) / 10;
+    return std::fabs(stats.averageLength - stats.stdevLength);
 }
 
 
