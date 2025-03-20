@@ -29,6 +29,7 @@
 #include <geos/geom/MultiPolygon.h>
 #include <geos/geom/Polygon.h>
 #include <geos/geom/prep/PreparedPolygon.h>
+#include <geos/geom/util/PointExtracter.h>
 #include <geos/geom/util/PolygonExtracter.h>
 #include <geos/triangulate/VoronoiDiagramBuilder.h>
 #include <geos/util/GEOSException.h>
@@ -42,6 +43,7 @@
 
 using namespace geos::geom;
 using namespace geos::geom::prep;
+using geos::geom::util::PointExtracter;
 using geos::geom::util::PolygonExtracter;
 using geos::triangulate::VoronoiDiagramBuilder;
 using geos::operation::distance::IndexedFacetDistance;
@@ -53,7 +55,7 @@ namespace geos {
 namespace operation {   // geos.operation
 namespace skeletonize { // geos.operation.skeletonize
 
-Skeletonizer::Skeletonizer(const Geometry* poly, const MultiPoint* points)
+Skeletonizer::Skeletonizer(const Geometry* poly, const Geometry* points)
         : m_inputGeometry(poly)
         , m_inputPoints(points)
         , m_inputFactory(poly->getFactory())
@@ -74,7 +76,7 @@ Skeletonizer::Skeletonizer(const Geometry *poly)
 std::unique_ptr<MultiLineString>
 Skeletonizer::skeletonize(
     const Geometry* poly,
-    const MultiPoint* mpoints,
+    const Geometry* mpoints,
     double tolerance,
     double conditioningLength)
 {
@@ -304,6 +306,12 @@ Skeletonizer::skeletonize()
     PolygonExtracter pe(polys);
     m_inputGeometry->apply_ro(&pe);
 
+    std::vector<const Point*> inputPoints;
+    if (m_inputPoints && ! m_inputPoints->isEmpty()) {
+        PointExtracter pte(inputPoints);
+        m_inputPoints->apply_ro(&pte);
+    }
+
     if (polys.empty()) {
         throw geos::util::GEOSException("No polygons in input geometry");
     }
@@ -312,16 +320,14 @@ Skeletonizer::skeletonize()
     for (const Polygon* poly : polys) {
 
         std::vector<const Point*> points;
-        if (m_inputPoints && ! m_inputPoints->isEmpty()) {
+        if (!inputPoints.empty()) {
             IndexedFacetDistance ifd(poly);
-            for (const auto& ptPtr : *m_inputPoints) {
-                const Point* pt = static_cast<const Point*>(ptPtr.get());
+            for (const Point* pt : inputPoints) {
                 if (ifd.isWithinDistance(pt, getTolerance())) {
                     points.push_back(pt);
                 }
             }
         }
-
         skeletonizePolygon(poly, points, lines);
     }
     return m_inputFactory->createMultiLineString(std::move(lines));
@@ -353,6 +359,8 @@ Skeletonizer::skeletonizePolygon(
     std::cout << "inputPolygon" << std::endl << m_inputPolygon << std::endl << std::endl;
 #endif
 
+    // std::cout << "m_inputGeometry->getNumPoints() = " << m_inputGeometry->getNumPoints() << std::endl;
+
     //
     // Condition the input vertices to make the subsequent
     // voronoi results more attractive and less likely to
@@ -366,6 +374,8 @@ Skeletonizer::skeletonizePolygon(
 #ifdef DEBUG_OUTPUT
     std::cout << "conditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
 #endif
+
+    // std::cout << "conditionedInput->getNumPoints() = " << conditionedInput->getNumPoints() << std::endl;
 
     //
     // If user has provided input/output points, we need to
@@ -396,6 +406,8 @@ Skeletonizer::skeletonizePolygon(
 #ifdef DEBUG_OUTPUT
     std::cout << "densifiedInput" << std::endl << densifiedInput->toString() << std::endl << std::endl;
 #endif
+
+    // std::cout << "densifiedInput->getNumPoints() = " << densifiedInput->getNumPoints() << std::endl;
 
     //
     // This is a point voronoi, and the edges created
