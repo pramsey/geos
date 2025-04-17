@@ -91,6 +91,12 @@ public:
     // possible pairs of path ends
     std::pair<std::vector<uint32_t>, double> longestPath(std::vector<uint32_t>& ends);
 
+    // Public access to the connected components map
+    // for test cases
+    const std::map<uint32_t, std::set<uint32_t>>& connectedComponents() const;
+    uint32_t connectedComponentsCount() const;
+
+
 private:
 
 
@@ -127,6 +133,10 @@ private:
     // a given unique vertex identifier
     std::vector<CoordinateXY> m_vertexList;
 
+    // Map (Vertex, Set(All Other Connected Vertices))
+    std::map<uint32_t, std::set<uint32_t>> m_connected;
+    uint32_t m_connectedCount = 0;
+
     // Vector (ID0, (ID1, Weight)[])
     // Vertex adjacency list, m_vertexCount in length, each
     // entry with a list of adjacent vertices and cost to
@@ -149,6 +159,7 @@ private:
     void buildContainedEdgeList();
     void buildInOutEdgeList();
     void buildAdjacencyList();
+    void findConnectedComponents();
 
     std::unique_ptr<LineString> pathToGeometry(
         std::vector<uint32_t>& vertexPath) const;

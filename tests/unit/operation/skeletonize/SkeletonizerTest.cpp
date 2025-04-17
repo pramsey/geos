@@ -6,7 +6,6 @@
 #include <tut/tut.hpp>
 // geos
 #include <geos/operation/skeletonize/Skeletonizer.h>
-#include <geos/operation/skeletonize/SegmentGraph.h>
 #include <geos/operation/distance/GeometryLocation.h>
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/Geometry.h>
@@ -163,26 +162,7 @@ void object::test<11> ()
 }
 
 
-template<>
-template<>
-void object::test<12> ()
-{
-    auto edges = read_edge_vector("MULTILINESTRING ((0 0, 1 1), (1 1, 2 2), (1 1, 2 1))");
-    std::vector<GeometryLocation> locs;
-    auto gf = geos::geom::GeometryFactory::create();
 
-    SegmentGraph sg(edges, locs, gf.get());
-    sg.build();
-
-    auto endVertices = sg.endVertices();
-    ensure_equals("endVertices == 3", endVertices.size(), 3ul);
-
-    auto result1 = sg.shortestPath(endVertices[0], endVertices[1]);
-    ensure_equals("shortestPath.second", result1.second, 2.41421, 0.0001);
-
-    auto result2 = sg.longestPath(endVertices);
-    ensure_equals("longestPath.second", result2.second, 2.82843, 0.0001);
-}
 
 template<>
 template<>

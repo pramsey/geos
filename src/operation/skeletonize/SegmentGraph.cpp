@@ -66,7 +66,6 @@ SegmentGraph::buildAdjacencyList()
     }
 }
 
-
 /* private */
 void
 SegmentGraph::buildContainedEdgeList()
@@ -144,6 +143,48 @@ SegmentGraph::buildInOutEdgeList()
 }
 
 
+void
+SegmentGraph::findConnectedComponents()
+{
+    m_connected.clear();
+    m_connectedCount = 0;
+
+    std::vector<bool> visited(m_vertexCount, false);
+
+    for (uint32_t start = 0; start < m_vertexCount; ++start) {
+        if (visited[start]) {
+            continue;
+        }
+
+        // New component
+        std::set<uint32_t> component;
+        std::queue<uint32_t> q;
+
+        q.push(start);
+        visited[start] = true;
+
+        while (!q.empty()) {
+            uint32_t v = q.front();
+            q.pop();
+            component.insert(v);
+
+            for (const auto& neighbor : m_adj[v]) {
+                uint32_t u = neighbor.first;
+                if (!visited[u]) {
+                    visited[u] = true;
+                    q.push(u);
+                }
+            }
+        }
+
+        // Choose representative as lowest-numbered vertex
+        uint32_t rep = *component.begin();
+        m_connected[rep] = std::move(component);
+        m_connectedCount++;
+    }
+}
+
+
 /* private */
 void
 SegmentGraph::build(void)
@@ -164,6 +205,9 @@ SegmentGraph::build(void)
 
     // Build m_edgeList into m_adj and m_vertexList
     buildAdjacencyList();
+
+    // Explore the graph to find any isolated sub-graphs
+    findConnectedComponents();
 
     return;
 }
@@ -414,6 +458,22 @@ SegmentGraph::pairsToGeometry(std::set<std::pair<uint32_t, uint32_t>>& pairs)
     // Stringing together noded collections of unique
     // segments/lines is what LineMerger does best
     return lm.getMergedLineStrings();
+}
+
+
+/* public */
+const std::map<uint32_t, std::set<uint32_t>>&
+SegmentGraph::connectedComponents() const
+{
+    return m_connected;
+}
+
+
+/* public */
+uint32_t
+SegmentGraph::connectedComponentsCount() const
+{
+    return m_connectedCount;
 }
 
 

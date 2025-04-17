@@ -39,6 +39,7 @@
 
 #include <cmath>
 
+#define DEBUG_OUTPUT
 #undef DEBUG_OUTPUT
 
 using namespace geos::geom;
@@ -181,7 +182,8 @@ double
 Skeletonizer::defaultConditioningLength(
     const SegmentStatistics& stats) const
 {
-    return std::fabs(stats.averageLength - stats.stdevLength);
+    // return std::fabs(stats.averageLength - stats.stdevLength);
+    return std::fabs(stats.averageLength);
 }
 
 
@@ -253,11 +255,6 @@ Skeletonizer::findInputOutputEdges(
     for (const Point* pt : points) {
         std::vector<GeometryLocation> locs = ifd.nearestLocations(pt);
 
-#ifdef DEBUG_OUTPUT
-        std::cout << "  i = " << i << std::endl;
-        std::cout << "    locs[0] = " << locs[0].toString() << std::endl;
-        std::cout << "    locs[1] = " << locs[1].toString() << std::endl;
-#endif
         // Because we fed the IndexedFacetDistance a MultLinestring
         // of two-point lines, the geometry component will just be the
         // two-point line we are interested in.
@@ -356,7 +353,7 @@ Skeletonizer::skeletonizePolygon(
 #ifdef DEBUG_OUTPUT
     std::cout << "m_tolerance = " << m_tolerance << std::endl;
     std::cout << "m_conditioningLength = " << m_conditioningLength << std::endl;
-    std::cout << "inputPolygon" << std::endl << m_inputPolygon << std::endl << std::endl;
+    std::cout << "m_inputGeometry" << std::endl << m_inputGeometry << std::endl << std::endl;
 #endif
 
     // std::cout << "m_inputGeometry->getNumPoints() = " << m_inputGeometry->getNumPoints() << std::endl;
@@ -388,7 +385,7 @@ Skeletonizer::skeletonizePolygon(
             m_tolerance);
 
 #ifdef DEBUG_OUTPUT
-        std::cout << "points = " << points->size() << std::endl;
+        std::cout << "points = " << points.size() << std::endl;
         std::cout << "gappedConditionedInput" << std::endl << conditionedInput->toString() << std::endl << std::endl;
 #endif
     }
