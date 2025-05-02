@@ -22,11 +22,6 @@ target_include_directories(test_geos_unit
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 
-# Precompile TUT
-#if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
-#    target_precompile_headers(test_geos_unit PRIVATE "${CMAKE_CURRENT_LIST_DIR}/tut/tut.hpp")
-#endif()
-
 file(GLOB_RECURSE _testfiles ${CMAKE_CURRENT_LIST_DIR}/**/*Test.cpp CONFIGURE_DEPEND)
 foreach(_testfile ${_testfiles})
     string(REPLACE ${CMAKE_CURRENT_LIST_DIR}/ "" _testname ${_testfile})

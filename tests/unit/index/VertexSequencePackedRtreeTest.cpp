@@ -14,6 +14,8 @@
 
 using geos::index::VertexSequencePackedRtree;
 
+using namespace geos::geom;
+
 namespace tut {
 //
 // Test Group
