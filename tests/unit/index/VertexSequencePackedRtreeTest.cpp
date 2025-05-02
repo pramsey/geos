@@ -12,10 +12,6 @@
 #include <geos/io/WKTWriter.h>
 #include <geos/index/VertexSequencePackedRtree.h>
 
-// std
-#include <stdio.h>
-
-using namespace geos::geom;
 using geos::index::VertexSequencePackedRtree;
 
 namespace tut {
