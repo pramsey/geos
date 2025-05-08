@@ -27,6 +27,9 @@ namespace geom {
 namespace edgegraph {
     class HalfEdge;
 }
+namespace dissolve {
+    class DissolveHalfEdge;
+}
 }
 
 
@@ -39,7 +42,7 @@ class GEOS_DLL DissolveEdgeGraph : public edgegraph::EdgeGraph {
 
 private:
 
-    std::vector<std::unique_ptr<edgegraph::HalfEdge>> edgeStore;
+    std::vector<std::unique_ptr<DissolveHalfEdge>> edgeStore;
 
 public:
 
