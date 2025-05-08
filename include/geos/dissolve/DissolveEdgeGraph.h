@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include <geos/dissolve/DissolveHalfEdge.h>
 #include <geos/edgegraph/EdgeGraph.h>
 #include <geos/export.h>
 
@@ -27,6 +26,9 @@ namespace geom {
 }
 namespace edgegraph {
     class HalfEdge;
+}
+namespace dissolve {
+    class DissolveHalfEdge;
 }
 }
 
@@ -45,6 +47,11 @@ private:
 public:
 
     edgegraph::HalfEdge* createEdge(const geom::CoordinateXYZM& p0);
+
+    DissolveEdgeGraph() {};
+
+    DissolveEdgeGraph(const DissolveEdgeGraph&) = delete;
+    DissolveEdgeGraph& operator=(const DissolveEdgeGraph&) = delete;
 
 };
 
