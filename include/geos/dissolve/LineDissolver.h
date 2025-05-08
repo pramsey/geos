@@ -25,7 +25,6 @@
 // Forward declarations
 namespace geos {
 namespace dissolve {
-    class DissolveEdgeGraph;
     class DissolveHalfEdge;
 }
 namespace edgegraph {

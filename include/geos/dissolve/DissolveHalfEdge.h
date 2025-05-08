@@ -36,8 +36,6 @@ namespace dissolve {  // geos.dissolve
 
 class GEOS_DLL DissolveHalfEdge : public edgegraph::MarkHalfEdge {
 
-    using CoordinateXYZM = geos::geom::CoordinateXYZM;
-
 
 private:
 
@@ -46,7 +44,7 @@ private:
 
 public:
 
-    DissolveHalfEdge(const CoordinateXYZM& orig)
+    DissolveHalfEdge(const geom::CoordinateXYZM& orig)
         : edgegraph::MarkHalfEdge(orig)
         , m_isStart(false)
     {}

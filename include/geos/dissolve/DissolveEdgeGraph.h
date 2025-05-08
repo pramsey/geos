@@ -36,17 +36,14 @@ namespace dissolve {  // geos.dissolve
 
 class GEOS_DLL DissolveEdgeGraph : public edgegraph::EdgeGraph {
 
-    using CoordinateXYZM = geos::geom::CoordinateXYZM;
-    using HalfEdge = geos::edgegraph::HalfEdge;
-
 
 private:
 
-    std::vector<std::unique_ptr<HalfEdge>> edgeStore;
+    std::vector<std::unique_ptr<edgegraph::HalfEdge>> edgeStore;
 
 public:
 
-    HalfEdge* createEdge(const CoordinateXYZM& p0);
+    edgegraph::HalfEdge* createEdge(const geom::CoordinateXYZM& p0);
 
 };
 
