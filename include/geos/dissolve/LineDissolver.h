@@ -19,6 +19,7 @@
 // #include <memory>
 // #include <vector>
 // #include <stack>
+#include <geos/geom/LineString.h>
 #include <geos/export.h>
 
 
@@ -34,7 +35,7 @@ namespace geom {
     class CoordinateSequence;
     class Geometry;
     class GeometryFactory;
-    class LineString;
+    // class LineString;
 }
 }
 
