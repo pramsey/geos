@@ -17,6 +17,7 @@
 
 #include <geos/edgegraph/EdgeGraph.h>
 #include <geos/export.h>
+#include <geos/dissolve/DissolveHalfEdge.h>
 
 
 // Forward declarations
@@ -28,7 +29,7 @@ namespace edgegraph {
     class HalfEdge;
 }
 namespace dissolve {
-    class DissolveHalfEdge;
+    // class DissolveHalfEdge;
 }
 }
 
