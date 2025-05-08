@@ -114,7 +114,7 @@ private:
     /**
      * Updates the tracked ringStartEdge
      * if the given edge has a lower origin
-     * (using the standard {@link Coordinate} ordering).
+     * (using the standard Coordinate ordering).
      *
      * Identifying the lowest starting node meets two goals:
      *
@@ -158,7 +158,7 @@ public:
     static std::unique_ptr<Geometry> dissolve(const Geometry* g);
 
     /**
-     * Adds a {@link Geometry} to be dissolved.
+     * Adds a Geometry to be dissolved.
      * Any number of geometries may be added by calling this method multiple times.
      * Any type of Geometry may be added.  The constituent linework will be
      * extracted to be dissolved.
