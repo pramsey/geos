@@ -56,7 +56,7 @@ LineDissolver::add(const Geometry* geom)
 
         LineStringFilter(LineDissolver* ld) : m_ld(ld) {};
 
-        void filter_ro(const Geometry* g) {
+        void filter_ro(const Geometry* g) override {
             GeometryTypeId type = g->getGeometryTypeId();
             if (type == GEOS_LINEARRING || type == GEOS_LINESTRING) {
                 m_ld->add(static_cast<const LineString*>(g));
