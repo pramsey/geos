@@ -77,7 +77,7 @@ class GEOS_DLL LineDissolver {
 
 private:
 
-    std::unique_ptr<Geometry> result = nullptr;
+    std::unique_ptr<Geometry> result;
     const GeometryFactory* factory = nullptr;
     DissolveEdgeGraph graph;
     std::vector<std::unique_ptr<LineString>> lines;
@@ -148,6 +148,8 @@ private:
 
 
 public:
+
+    LineDissolver() : result(nullptr) {};
 
     /**
      * Dissolves the linear components in a geometry.
