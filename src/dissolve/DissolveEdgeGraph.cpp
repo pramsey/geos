@@ -15,7 +15,6 @@
 
 #include <geos/dissolve/DissolveEdgeGraph.h>
 
-#include <geos/dissolve/DissolveHalfEdge.h>
 #include <geos/edgegraph/HalfEdge.h>
 #include <geos/geom/Coordinate.h>
 
