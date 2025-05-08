@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <geos/dissolve/DissolveHalfEdge.h>
 #include <geos/edgegraph/EdgeGraph.h>
 #include <geos/export.h>
 
@@ -26,9 +27,6 @@ namespace geom {
 }
 namespace edgegraph {
     class HalfEdge;
-}
-namespace dissolve {
-    class DissolveHalfEdge;
 }
 }
 
