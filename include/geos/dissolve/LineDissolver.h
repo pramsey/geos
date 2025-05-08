@@ -177,6 +177,13 @@ public:
      */
     void add(std::vector<const Geometry*> geometries);
 
+    /**
+     * Disable copy construction and assignment. Needed to make this
+     * class compile under MSVC, because it has a vector<unique_ptr>
+     * as a member. (See https://stackoverflow.com/q/29565299)
+     */
+    LineDissolver(const LineDissolver&) = delete;
+    LineDissolver& operator=(const LineDissolver&) = delete;
 
 
 };

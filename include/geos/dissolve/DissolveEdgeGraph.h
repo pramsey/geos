@@ -50,6 +50,11 @@ public:
 
     DissolveEdgeGraph() {};
 
+    /**
+     * Disable copy construction and assignment. Needed to make this
+     * class compile under MSVC, because it has a vector<unique_ptr>
+     * as a member. (See https://stackoverflow.com/q/29565299)
+     */
     DissolveEdgeGraph(const DissolveEdgeGraph&) = delete;
     DissolveEdgeGraph& operator=(const DissolveEdgeGraph&) = delete;
 
