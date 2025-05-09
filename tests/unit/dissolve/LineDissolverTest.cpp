@@ -56,7 +56,7 @@ struct test_linedissolver_data {
 typedef test_group<test_linedissolver_data> group;
 typedef group::object object;
 
-group test_linedissolver_data("geos::coverage::LineDissolver");
+group test_linedissolver_data("geos::dissolve::LineDissolver");
 
 
 // testSingleSegmentLine
