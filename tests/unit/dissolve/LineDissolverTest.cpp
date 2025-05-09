@@ -23,12 +23,12 @@ struct test_linedissolver_data {
 
     void checkDissolve(const std::string& wkt, const std::string& wkt_expected)
     {
-        std::vector<const std::string> wkt_vec;
+        std::vector<std::string> wkt_vec;
         wkt_vec.push_back(wkt);
         checkDissolve(wkt_vec, wkt_expected);
     }
 
-    void checkDissolve(std::vector<const std::string>& wkt_vec, const std::string& wkt_expected)
+    void checkDissolve(std::vector<std::string>& wkt_vec, const std::string& wkt_expected)
     {
         std::vector<std::unique_ptr<Geometry>> geom_store;
         std::vector<const Geometry*> geoms;
@@ -84,7 +84,7 @@ template<>
 template<>
 void object::test<3>()
 {
-    std::vector<const std::string> wkts = {
+    std::vector<std::string> wkts = {
         "LINESTRING (0 0, 1 1, 2 2)",
         "LINESTRING (1 1, 2 2, 3 3)"};
 
@@ -98,7 +98,7 @@ template<>
 template<>
 void object::test<4>()
 {
-    std::vector<const std::string> wkts = {
+    std::vector<std::string> wkts = {
         "LINESTRING (0 0, 1 1, 2 2)",
         "LINESTRING (1 1, 2 2, 3 3)",
         "LINESTRING (1 1, 2 2, 2 0)" };
