@@ -19,6 +19,7 @@
 #include <geos/export.h>
 #include <geos/dissolve/DissolveHalfEdge.h>
 
+#include <deque>
 
 // Forward declarations
 namespace geos {
@@ -43,13 +44,14 @@ class GEOS_DLL DissolveEdgeGraph : public edgegraph::EdgeGraph {
 
 private:
 
-    std::vector<std::unique_ptr<DissolveHalfEdge>> edgeStore;
+    std::deque<DissolveHalfEdge> dhEdges;
 
 public:
 
-    edgegraph::HalfEdge* createEdge(const geom::CoordinateXYZM& p0);
+    edgegraph::HalfEdge* createEdge(const geom::CoordinateXYZM& p0) override;
 
     DissolveEdgeGraph() {};
+    ~DissolveEdgeGraph() {};
 
     /**
      * Disable copy construction and assignment. Needed to make this

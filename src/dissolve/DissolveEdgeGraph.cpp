@@ -30,9 +30,8 @@ namespace dissolve {  // geos.dissolve
 HalfEdge*
 DissolveEdgeGraph::createEdge(const CoordinateXYZM& p0)
 {
-    DissolveHalfEdge* dhe = new DissolveHalfEdge(p0);
-    edgeStore.emplace_back(dhe);
-    return dhe;
+    dhEdges.emplace_back(p0);
+    return &(dhEdges.back());
 }
 
 

@@ -84,14 +84,6 @@ private:
     std::stack<HalfEdge*> nodeEdgeStack;
     DissolveHalfEdge* ringStartEdge = nullptr;
 
-    void add(const LineString* lineString);
-
-    /**
-     * Gets the dissolved result as a MultiLineString.
-     *
-     * @return the dissolved lines
-     */
-    std::unique_ptr<Geometry> getResult();
 
     void computeResult();
 
@@ -177,6 +169,15 @@ public:
      * @param geometries the geometries to be line-merged
      */
     void add(std::vector<const Geometry*> geometries);
+
+    void add(const LineString* lineString);
+
+    /**
+     * Gets the dissolved result as a MultiLineString.
+     *
+     * @return the dissolved lines
+     */
+    std::unique_ptr<Geometry> getResult();
 
     /**
      * Disable copy construction and assignment. Needed to make this

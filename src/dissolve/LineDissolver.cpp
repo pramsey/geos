@@ -36,7 +36,7 @@ namespace geos {      // geos
 namespace dissolve {  // geos.dissolve
 
 
-/* public static */
+/* public */
 std::unique_ptr<Geometry>
 LineDissolver::dissolve(const Geometry* g)
 {
@@ -89,8 +89,9 @@ LineDissolver::add(const LineString* lineString)
     const CoordinateSequence* seq = lineString->getCoordinatesRO();
     bool doneStart = false;
     for (std::size_t i = 1; i < seq->size(); i++) {
-        const CoordinateXYZM& orig = seq->getAt<CoordinateXYZM>(i-1);
-        const CoordinateXYZM& dest = seq->getAt<CoordinateXYZM>(i);
+        CoordinateXYZM orig, dest;
+        seq->getAt(i-1, orig);
+        seq->getAt(i,   dest);
         DissolveHalfEdge* e = static_cast<DissolveHalfEdge*>(graph.addEdge(orig, dest));
         // skip zero-length edges
         if (e == nullptr) continue;

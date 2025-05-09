@@ -13,9 +13,7 @@
  *
  **********************************************************************/
 
-
 #include <geos/dissolve/DissolveHalfEdge.h>
-
 
 namespace geos {      // geos
 namespace dissolve {  // geos.dissolve
