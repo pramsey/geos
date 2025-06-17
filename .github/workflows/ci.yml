@@ -215,7 +215,7 @@ jobs:
        cd build
        ctest --output-on-failure -C Debug
 
-  windows-msvc-19:
+  windows-msvc-22:
     name: 'Windows (Visual Studio 2022, Release, windows-2022)'
     runs-on: windows-2022
     steps:
