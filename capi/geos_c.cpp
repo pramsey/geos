@@ -1135,6 +1135,19 @@ extern "C" {
         return GEOSMinimumSpanningTree_r(handle, geoms, ngeoms);
     }
 
+    std::size_t*
+    GEOSShortestPath(const Geometry* const* geoms, unsigned int ngeoms,
+        double startx, double starty, double endx, double endy)
+    {
+        return GEOSShortestPath_r(handle, geoms, ngeoms, startx, starty, endx, endy);
+    }
+
+    std::size_t*
+    GEOSLongestShortestPath(const Geometry* const* geoms, unsigned int ngeoms)
+    {
+        return GEOSLongestShortestPath_r(handle, geoms, ngeoms);
+    }
+
     Geometry*
     GEOSLineMergeDirected(const Geometry* g)
     {
