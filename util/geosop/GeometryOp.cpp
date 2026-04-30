@@ -68,6 +68,7 @@
 #include <geos/triangulate/DelaunayTriangulationBuilder.h>
 #include <geos/triangulate/VoronoiDiagramBuilder.h>
 #include <geos/triangulate/polygon/ConstrainedDelaunayTriangulator.h>
+#include <geos/operation/shortest/ShortestPath.h>
 
 #include "GeometryOp.h"
 
@@ -114,6 +115,7 @@ const std::string catMetric = "Metric";
 const std::string catOverlay = "Overlay";
 const std::string catRel = "Spatial Relationship";
 const std::string catValid = "Validity";
+const std::string catGraph = "Graph";
 
 //-- GeometryOps are created lazily via a function
 struct GeometryOpCreator {
@@ -1045,6 +1047,72 @@ std::vector<GeometryOpCreator> opRegistry {
             }
         }
         return new Result( std::move(resultList) );
+    });
+}},
+
+//=============  category: Graph  ==================
+
+{"shortestPath", [](std::string name) { return GeometryOp::create(name,
+    catGraph,
+    "find shortest path in curve network A between the two points of B (MULTIPOINT(start end))",
+    [](const Geometry& geom, const Geometry& geomB) {
+        // Extract curves from geometry A
+        std::vector<const geos::geom::Curve*> curves;
+        for (std::size_t i = 0; i < geom.getNumGeometries(); ++i) {
+            if (const auto* c = dynamic_cast<const geos::geom::Curve*>(geom.getGeometryN(i)))
+                curves.push_back(c);
+        }
+        // Geometry B must be a MULTIPOINT with at least 2 points (start, end)
+        if (geomB.getNumGeometries() < 2) {
+            return new Result( geom.getFactory()->createGeometryCollection() );
+        }
+        const geos::geom::CoordinateXY* cs = geomB.getGeometryN(0)->getCoordinate();
+        const geos::geom::CoordinateXY* ce = geomB.getGeometryN(1)->getCoordinate();
+        if (!cs || !ce) {
+            return new Result( geom.getFactory()->createGeometryCollection() );
+        }
+
+        std::vector<std::size_t> result;
+        geos::operation::shortest::ShortestPath::shortestPath(curves, *cs, *ce, result);
+
+        // Build ordered output: collect path edges sorted by position
+        std::vector<std::pair<std::size_t, std::size_t>> ordered;
+        for (std::size_t i = 0; i < result.size(); ++i) {
+            if (result[i] > 0) ordered.emplace_back(result[i], i);
+        }
+        std::sort(ordered.begin(), ordered.end());
+
+        std::vector<std::unique_ptr<Geometry>> pathGeoms;
+        for (const auto& pr : ordered) {
+            pathGeoms.push_back(curves[pr.second]->clone());
+        }
+        return new Result( geom.getFactory()->createGeometryCollection(std::move(pathGeoms)) );
+    });
+}},
+{"longestShortestPath", [](std::string name) { return GeometryOp::createAgg(name,
+    catGraph,
+    "find longest shortest path (diameter) in curve network A",
+    [](const Geometry& geom) {
+        std::vector<const geos::geom::Curve*> curves;
+        for (std::size_t i = 0; i < geom.getNumGeometries(); ++i) {
+            if (const auto* c = dynamic_cast<const geos::geom::Curve*>(geom.getGeometryN(i)))
+                curves.push_back(c);
+        }
+
+        std::vector<std::size_t> result;
+        geos::operation::shortest::ShortestPath::longestShortestPath(curves, result);
+
+        std::vector<std::pair<std::size_t, std::size_t>> ordered;
+        for (std::size_t i = 0; i < result.size(); ++i) {
+            if (result[i] > 0) ordered.emplace_back(result[i], i);
+        }
+        std::sort(ordered.begin(), ordered.end());
+
+        std::vector<std::unique_ptr<Geometry>> pathGeoms;
+        for (const auto& pr : ordered) {
+            pathGeoms.push_back(curves[pr.second]->clone());
+        }
+        return new Result( geom.getFactory()->createGeometryCollection(std::move(pathGeoms)) );
     });
 }}
 };

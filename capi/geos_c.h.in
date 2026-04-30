@@ -1241,6 +1241,20 @@ extern size_t GEOS_DLL *GEOSMinimumSpanningTree_r(
     const GEOSGeometry * const geoms[],
     unsigned int ngeoms);
 
+/** \see GEOSShortestPath */
+extern size_t GEOS_DLL *GEOSShortestPath_r(
+    GEOSContextHandle_t handle,
+    const GEOSGeometry * const geoms[],
+    unsigned int ngeoms,
+    double startx, double starty,
+    double endx, double endy);
+
+/** \see GEOSLongestShortestPath */
+extern size_t GEOS_DLL *GEOSLongestShortestPath_r(
+    GEOSContextHandle_t handle,
+    const GEOSGeometry * const geoms[],
+    unsigned int ngeoms);
+
 /** \see GEOSLineMergeDirected */
 extern GEOSGeometry GEOS_DLL *GEOSLineMergeDirected_r(
     GEOSContextHandle_t handle,
@@ -5469,6 +5483,46 @@ extern GEOSGeometry GEOS_DLL *GEOSLineMerge(const GEOSGeometry* g);
  * \since 3.15.0
  */
 extern size_t GEOS_DLL *GEOSMinimumSpanningTree(const GEOSGeometry * const geoms[], unsigned int ngeoms);
+
+/**
+ * Computes the shortest path between two points in a curve network using Dijkstra's algorithm.
+ *
+ * The start and end points are snapped to the nearest graph node (curve endpoint)
+ * before running the algorithm. Edge weights are curve lengths.
+ *
+ * \param geoms Input array of Curves. Non-Curve geometries are ignored.
+ * \param ngeoms Number of geometries in the input array.
+ * \param startx X coordinate of the start point.
+ * \param starty Y coordinate of the start point.
+ * \param endx X coordinate of the end point.
+ * \param endy Y coordinate of the end point.
+ * \return An array of size_t of size ngeoms. 0 if the edge is not on the shortest path.
+ *         Values > 0 give the 1-based position of the edge in the path
+ *         (1 = first edge leaving start, 2 = second edge, etc.).
+ *         The caller is responsible for freeing the returned array using GEOSFree().
+ *         Returns NULL if ngeoms is 0 or on error.
+ * \since 3.15.0
+ */
+extern size_t GEOS_DLL *GEOSShortestPath(const GEOSGeometry * const geoms[], unsigned int ngeoms,
+    double startx, double starty, double endx, double endy);
+
+/**
+ * Computes the longest shortest path ("diameter") of a curve network.
+ *
+ * Uses a triple-Dijkstra sweep to find the diameter:
+ * finds node A furthest from the centroid, node B furthest from A,
+ * node C furthest from B, and returns the path from A to C.
+ * Edge weights are curve lengths.
+ *
+ * \param geoms Input array of Curves. Non-Curve geometries are ignored.
+ * \param ngeoms Number of geometries in the input array.
+ * \return An array of size_t of size ngeoms. 0 if the edge is not on the path.
+ *         Values > 0 give the 1-based position of the edge in the path.
+ *         The caller is responsible for freeing the returned array using GEOSFree().
+ *         Returns NULL if ngeoms is 0 or on error.
+ * \since 3.15.0
+ */
+extern size_t GEOS_DLL *GEOSLongestShortestPath(const GEOSGeometry * const geoms[], unsigned int ngeoms);
 
 /**
  * Merges a set of LineStrings,* joining them at nodes which have cardinality 2.
