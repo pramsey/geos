@@ -145,12 +145,12 @@ namespace {
             if (d > res.dist[u]) continue;
 
             for (const SPEdge& e : adj[u]) {
-                double nd = res.dist[u] + e.weight;
-                if (nd < res.dist[e.to]) {
-                    res.dist[e.to] = nd;
+                double newDist = res.dist[u] + e.weight;
+                if (newDist < res.dist[e.to]) {
+                    res.dist[e.to] = newDist;
                     res.pred[e.to] = u;
                     res.predEdge[e.to] = e.originalIndex;
-                    pq.push({nd, e.to});
+                    pq.push({newDist, e.to});
                 }
             }
         }
