@@ -277,4 +277,95 @@ void object::test<12>()
     ensure_equals(countRev, 2);
 }
 
+// Test 13: Parallel edges — should pick the shorter one
+template<> template<>
+void object::test<13>()
+{
+    // Edge 0: length 10
+    // Edge 1: length ~14.14
+    auto geom = readWKT("MULTILINESTRING((0 0, 10 0), (0 0, 5 5, 10 0))");
+    auto curves = toCurves(geom.get());
+
+    std::vector<std::size_t> result;
+    geos::operation::shortest::ShortestPath::shortestPath(
+        curves, pt(0,0), pt(10,0), result);
+
+    ensure_equals(result.size(), 2u);
+    ensure_equals(result[0], 1u); // shorter edge
+    ensure_equals(result[1], 0u);
+}
+
+// Test 14: Disconnected components — longestShortestPath should find the absolute longest
+template<> template<>
+void object::test<14>()
+{
+    // Component 1: heavy (many small edges) near (0,0)
+    // Component 2: one long edge far away (diameter = 100)
+    auto geom = readWKT("MULTILINESTRING("
+        "(0 0, 1 0), (0 0, 0 1), (0 0, -1 0), (0 0, 0 -1), "
+        "(0 0, 0.5 0.5), (0 0, -0.5 0.5), (0 0, -0.5 -0.5), (0 0, 0.5 -0.5), "
+        "(100 0, 200 0))");
+    auto curves = toCurves(geom.get());
+
+    std::vector<std::size_t> result;
+    geos::operation::shortest::ShortestPath::longestShortestPath(curves, result);
+
+    ensure_equals(result.size(), 9u);
+    // Diameter should be the 100-length edge (index 8)
+    ensure_equals(result[8], 1u);
+    for (std::size_t i=0; i<8; ++i) ensure_equals(result[i], 0u);
+}
+
+// Test 15: Cycle — should pick the shortest route around the cycle
+template<> template<>
+void object::test<15>()
+{
+    // Square cycle (0,0)-(10,0)-(10,10)-(0,10)-(0,0)
+    auto geom = readWKT("MULTILINESTRING((0 0, 10 0), (10 0, 10 10), (10 10, 0 10), (0 10, 0 0))");
+    auto curves = toCurves(geom.get());
+
+    std::vector<std::size_t> result;
+    // Shortest path from (0,0) to (0,10) is edge 3 (length 10)
+    // Detour is 0+1+2 (length 30)
+    geos::operation::shortest::ShortestPath::shortestPath(
+        curves, pt(0,0), pt(0,10), result);
+
+    ensure_equals(result.size(), 4u);
+    ensure_equals(result[3], 1u);
+    ensure_equals(result[0], 0u);
+    ensure_equals(result[1], 0u);
+    ensure_equals(result[2], 0u);
+}
+
+// Test 16: Zero-length edge (identical endpoints) — should be ignored without error
+template<> template<>
+void object::test<16>()
+{
+    auto geom = readWKT("MULTILINESTRING((0 0, 10 0), (10 0, 10 0))");
+    auto curves = toCurves(geom.get());
+
+    std::vector<std::size_t> result;
+    geos::operation::shortest::ShortestPath::shortestPath(
+        curves, pt(0,0), pt(10,0), result);
+
+    ensure_equals(result.size(), 2u);
+    ensure_equals(result[0], 1u);
+    ensure_equals(result[1], 0u);
+}
+
+// Test 17: Single ring — start and end are same, curve is ignored
+template<> template<>
+void object::test<17>()
+{
+    auto geom = readWKT("LINESTRING(0 0, 10 0, 10 10, 0 10, 0 0)");
+    auto curves = toCurves(geom.get());
+
+    std::vector<std::size_t> result;
+    geos::operation::shortest::ShortestPath::shortestPath(
+        curves, pt(0,0), pt(10,10), result);
+
+    ensure_equals(result.size(), 1u);
+    ensure_equals(result[0], 0u);
+}
+
 } // namespace tut
