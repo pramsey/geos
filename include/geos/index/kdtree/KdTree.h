@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <deque>
+#include <list>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -56,7 +56,8 @@ class GEOS_DLL KdTree {
 
 private:
 
-    std::deque<KdNode> nodeQue;
+    //std::deque<KdNode> nodeQue;
+    std::list<KdNode> nodeQue;
     KdNode *root;
     std::size_t numberOfNodes;
     double tolerance;
