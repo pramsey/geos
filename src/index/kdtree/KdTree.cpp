@@ -286,7 +286,11 @@ KdTree::query(const geom::Envelope& queryEnv, std::vector<KdNode*>& result)
 /*public*/
 KdNode*
 KdTree::query(const geom::Coordinate& queryPt) {
-    return queryNodePoint(root, queryPt, true);
+    // Copy to a local so that when this is inlined into a caller (e.g. find()),
+    // MSVC does not clobber the reference register while loading index->root.
+    // Without this copy MSVC generates a null queryPt passed to queryNodePoint.
+    const geom::Coordinate qt(queryPt);
+    return queryNodePoint(root, qt, true);
 }
 
 
