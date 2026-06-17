@@ -228,23 +228,15 @@ KdTree::queryNode(KdNode* currentNode, const geom::Envelope& queryEnv, bool odd,
 
 /*private*/
 KdNode*
-KdTree::queryNodePoint(KdNode* currentNode, const geom::Coordinate& queryPt, bool odd)
+KdTree::queryNodePoint(KdNode* currentNode, double qx, double qy, bool odd)
 {
     while (currentNode != nullptr)
     {
-        if (currentNode->getCoordinate().equals2D(queryPt))
+        if (currentNode->getX() == qx && currentNode->getY() == qy)
             return currentNode;
 
-        double ord;
-        double discriminant;
-        if (odd) {
-            ord = queryPt.x;
-            discriminant = currentNode->getX();
-        }
-        else {
-            ord = queryPt.y;
-            discriminant = currentNode->getY();
-        }
+        double ord = odd ? qx : qy;
+        double discriminant = odd ? currentNode->getX() : currentNode->getY();
 
         bool searchLeft = (ord < discriminant);
         odd = !odd;
@@ -284,15 +276,9 @@ KdTree::query(const geom::Envelope& queryEnv, std::vector<KdNode*>& result)
 }
 
 /*public*/
-// MSVC has a register-clobbering bug when this function is inlined into find():
-// it overwrites rdx (the &queryPt reference) while loading index->root, passing
-// null to queryNodePoint. Preventing inlining forces a proper call boundary.
-#ifdef _MSC_VER
-__declspec(noinline)
-#endif
 KdNode*
 KdTree::query(const geom::Coordinate& queryPt) {
-    return queryNodePoint(root, queryPt, true);
+    return queryNodePoint(root, queryPt.x, queryPt.y, true);
 }
 
 

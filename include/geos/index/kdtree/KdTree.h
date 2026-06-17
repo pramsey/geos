@@ -65,7 +65,7 @@ private:
     KdNode* insertExact(const geom::Coordinate& p, void* data);
 
     void queryNode(KdNode* currentNode, const geom::Envelope& queryEnv, bool odd, KdNodeVisitor& visitor);
-    KdNode* queryNodePoint(KdNode* currentNode, const geom::Coordinate& queryPt, bool odd);
+    KdNode* queryNodePoint(KdNode* currentNode, double qx, double qy, bool odd);
 
     /**
     * Create a node on a locally managed deque to allow easy
