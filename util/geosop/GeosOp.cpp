@@ -126,9 +126,9 @@ int main(int argc, char** argv) {
             std::cout << "- Negative numeric op arguments can be specified with leading N:  e.g. N-0.1" << std::endl;
             std::cout << std::endl;
             std::cout << "Operation signature legend:" << std::endl;
-            std::cout << "  Inputs: A - geometry A   B - geometry B   N - numeric argument" << std::endl;
-            std::cout << "  Result: G - geometry   [G] - geometry list   B - boolean" << std::endl;
-            std::cout << "          D - double     I - integer             S - string" << std::endl;
+            std::cout << "  Inputs: A - geometry A   B  - geometry B     N - numeric argument" << std::endl;
+            std::cout << "  Result: G - geometry    [G] - geometry list  B - boolean" << std::endl;
+            std::cout << "          D - double       I  - integer        S - string" << std::endl;
             std::cout << "  Flags:  AGG - operates on collected (aggregated) geometry" << std::endl;
             std::cout << std::endl;
             std::cout << "Operations:" << std::endl;
